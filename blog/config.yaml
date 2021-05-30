@@ -12,6 +12,11 @@ menu:
     title: Archive
     url: /posts/
     weight: 0
+  - identifier: categories
+    name: Categories
+    title: Categories
+    url: /categories/
+    weight: 0
 
 params:
   author: "Jay Crumb"
@@ -21,5 +26,9 @@ params:
   dateFormat: "2006-01-02"
   paginationSinglePost: true
   style: light-without-switcher
-  readMore: false
+  readMore: true
   disableSummary: false
+  style: auto
+  social:
+    - id: github
+      name: jcrumb
