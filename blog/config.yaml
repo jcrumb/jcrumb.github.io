@@ -1,0 +1,25 @@
+languageCode: "en-us"
+baseUrl: "https://jcrumb.github.io"
+title: "Aardonyx Blog"
+theme: "anubis"
+paginate: 10
+enableRobotsTXT: true
+
+menu:
+  main:
+  - identifier: archive
+    name: Archive
+    title: Archive
+    url: /posts/
+    weight: 0
+
+params:
+  author: "Jay Crumb"
+  email: jay@aardonyx.ca
+  avatar: "/images/me.png" # used for microformats
+  description: ""
+  dateFormat: "2006-01-02"
+  paginationSinglePost: true
+  style: light-without-switcher
+  readMore: false
+  disableSummary: false
