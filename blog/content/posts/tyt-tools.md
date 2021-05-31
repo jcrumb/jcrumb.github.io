@@ -10,21 +10,22 @@ summary: >
     the configurations available in the software.
 ---
 
-# Disclaimer
-**The procedures described below allow you to modify the transmission range of your TYT TH-UV88, including unlocking frequencies that may be illegal for you to
-transmit on depending on your jurisdiction. Proceed at your own risk, and ensure that you're compliant with local laws around transmit frequencies.**
+***Disclaimer: The procedures described below allow you to modify the transmission range of your TYT TH-UV88, including unlocking frequencies that may be illegal for you to
+transmit on depending on your jurisdiction. Proceed at your own risk, and ensure that you're compliant with local laws around transmission frequencies.***
 
-If you would like to skip the technical background and jump straight to instructions click [here](#putting-it-all-together)
 
-# Introduction
+*If you would like to skip the technical background and jump straight to instructions click [here](#putting-it-all-together)*
+
+---
+
 I recently picked up a [TYT TH-UV88](https://www.fleetwooddp.com/collections/handheld-amateur-ham-radios-and-walkie-talkies-for-business-and-family-use/products/tyt-th-uv88-dual-band-pure-amateur-ham-radio) hoping to have a cheap option for backroads use in Canada.
 As far as I know, this is the cheapest radio that has an ISED certification number for land mobile use, which is a special class of radios that operate outside of
-the designated amateur bands. This class of radios is commonly used for commercial traffic, and is especially handy on forestry roads so as not to get creamed by a
+the designated amateur bands. These radios are commonly used for commercial traffic, and are especially handy on forestry roads so as not to get creamed by a
 logging truck. 
 
 ![TYT Radio](/blogimages/tyt/tyt.png)
 
-When I picked out this radio I figured it would be a simple job to program the [standard RR channels](https://www.ic.gc.ca/eic/site/smt-gst.nsf/eng/sf11127.html), 
+When I picked out this radio I figured it would be a simple job to program the [standard Resource Road channels](https://www.ic.gc.ca/eic/site/smt-gst.nsf/eng/sf11127.html), 
 grab a license online from ISED and be on my way. I couldn't understand why vendors were charging more than the value of the radio itself to program the channels.
 
 # The Problem
@@ -32,8 +33,8 @@ Turns out that when you buy a TH-UV88 in Canada, out of the box it's locked to a
 you try to transmit on them you'll simply be kicked back to the last amateur frequency used. I contacted the vendor where I got my radio, and they informed me that
 unlocking the transmit ranges required software only supplied to dealers and I'd have to ship it back to them for programming.
 
-I had a sneaking suspicion that the "dealer only" software required was probably the same as the consumer software with a few tweaks or hidden menus. Given the quality of software
-often seen with these cheap radios the idea that they were actually shipping two separate software packages seemed far-fetched, so I started digging.
+I had a sneaking suspicion that the "dealer only" software required was probably the same as the consumer software with a few tweaks or extra menus. Given the quality of software
+often seen with these cheap handhelds the idea that they were actually shipping two separate software packages seemed far-fetched, so I started digging.
 
 # A Bit of Code Spelunking
 The first step was looking into the `setting.ini` file that comes bundled with the software. As soon as I opened this up, my suspicions about the software being the same became a lot
@@ -59,12 +60,12 @@ gpssystem=0
 Chinese=Traditional
 ```
 
-in particular, `testmode`, `Factory` and `OwnUsed` looked like they might be useful. With that out of the way, I actually stumbled onto another piece of good news when launching
-the software from a non-default location. It crashed with an error message that let me know it was written with the .NET Framework, which is easy to decompile
+in particular, `testmode`, `Factory` and `OwnUsed` looked like they might be useful. With that out of the way, I stumbled onto another piece of good news when launching
+the software from a non-default location; it crashed with an error message that let me know it was written with the .NET Framework, which is easy to decompile
 and results in some very readable code. Jackpot! 
 
 ### Give Up Your Secrets!
-I fired up the wonderfully useful [DotPeek](https://www.jetbrains.com/decompiler/) and got to work. There was a very helpfully named `FatherWin.cs` class that looked
+I fired up [DotPeek](https://www.jetbrains.com/decompiler/) and got to work. There was a very helpfully named `FatherWin.cs` class that looked
 like it contained the logic for the main application window, and was responsible for loading the configuration file we saw earlier. A lot of it is fairly inscrutable
 `this.toolStripMenuItem3.Name = "toolStripMenuItem3";` nonsense, but after a bit of reading I found this gem:
 ```cs
@@ -81,7 +82,7 @@ registration screen:
 
 ![TYT Registration Screen](/blogimages/tyt/reg-screen.png)
 
-The code generated is based on the serial number of the first attached hard drive on your machine. My assumption is that dealers send this code to the factory, who can generate a matching code for the registration window. Here's the code that does the key generation, where `strTest` is your hard drive serial:
+The code generated is based on the serial number of the first attached hard drive on your machine. My assumption is that dealers send this code to the factory, who can generate a matching one for the registration window. Here's the function that does the key generation, where `strTest` is your hard drive serial:
 ```cs
 public static string CodeAdj(string strTest, int Code)
 {
@@ -110,7 +111,7 @@ The text above translates to "Registration is successful, thank you for using!".
 
 ### Frequency Unlocking
 As I mentioned above, my main goal was unlocking the radio to allow transmitting outside of the amateur 2m band (144-148MHz). Unfortunately, unlocking the factory mode on its 
-own is not enough to do this. The frequency range menu is still read-only and won't allow adjustment of the values. Back into the code we go!
+own is not enough to do this. The frequency range menu is still read-only and won't allow adjustment of the values. Back into the code we go.
 
 I pulled up `RfRangWin.cs` which contains the code for the frequency limitation UI, and found a couple strings that suggested I was on the right path: 
 ```cs
@@ -137,7 +138,7 @@ I pulled up `RfRangWin.cs` which contains the code for the frequency limitation 
       }
     };
 ```
-Evidently, there was another code gate here to prevent tweaking the VFO limiter without some kind of authorization. You can show the code entry box by pressing `p` 
+There was another code gate here to prevent tweaking the VFO limiter without some kind of authorization. You can show the code entry box by pressing `p` 
 in the frequency range screen, as long as you have factory mode enabled:
 ```cs
 private void RfRangWin_KeyPress(object sender, KeyPressEventArgs e)
@@ -184,7 +185,7 @@ You now have access to the factory tuning tools and test mode. To unlock transmi
 - Write changes to your radio
 
 # What's Next?
-I haven't played very much with the factory tooling that's unlocked. Some of it looks like it has a high potential for breaking things, and what I was really after 
+I haven't played much with the factory tooling that's unlocked. Some of it looks like it has a high potential for breaking things, and what I was really after 
 (locking the front panel of the radio) doesn't appear to be in there. But, some options for those of you who are more adventurous than me:
 ![TYT Basis Adjustment](/blogimages/tyt/basisadj.png)
 
