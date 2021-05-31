@@ -70,12 +70,12 @@ like it contained the logic for the main application window, and was responsible
 `this.toolStripMenuItem3.Name = "toolStripMenuItem3";` nonsense, but after a bit of reading I found this gem:
 ```cs
 if (strArray[13].Substring(num13 + 1, strArray[13].Length - num13 - 1) == "ARRVIN")
-    {
-        Class1.LanguageDisEable = "Enable";
-        Class1.FactoryEn = true;
-        Class1.GbTestModEn = true;
-        Class1.GbOwnUsedEn = true;
-    }
+{
+    Class1.LanguageDisEable = "Enable";
+    Class1.FactoryEn = true;
+    Class1.GbTestModEn = true;
+    Class1.GbOwnUsedEn = true;
+}
 ```
 I set `OwnUsed=ARRVIN` in the configuration file, figuring I was in business -- but it was not to be. When you have the factory mode enabled, the app starts up with a
 registration screen:
@@ -103,8 +103,8 @@ public static string CodeAdj(string strTest, int Code)
 Luckily, I didn't have to expend too much brain power in reverse engineering how this code generation works to make my own key as the developers left a handy backdoor:
 ```cs
 if (str3 == text || text == "13636922224")
-      {
-        int num = (int) MessageBox.Show("注册成功,谢谢使用！");
+{
+    int num = (int) MessageBox.Show("注册成功,谢谢使用！");
 ...
 ```
 The text above translates to "Registration is successful, thank you for using!". Done and dusted, and now we have factory tooling available for use!
@@ -138,7 +138,7 @@ I pulled up `RfRangWin.cs` which contains the code for the frequency limitation 
       }
     };
 ```
-There was another code gate here to prevent tweaking the VFO limiter without some kind of authorization. You can show the code entry box by pressing `p` 
+There was another gate here to prevent tweaking the VFO limiter without some kind of authorization. You can show the code entry box by pressing `p` 
 in the frequency range screen, as long as you have factory mode enabled:
 ```cs
 private void RfRangWin_KeyPress(object sender, KeyPressEventArgs e)

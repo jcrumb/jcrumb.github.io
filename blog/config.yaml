@@ -1,6 +1,6 @@
 languageCode: "en-us"
 baseUrl: "https://jcrumb.github.io"
-title: "Aardonyx Blog"
+title: "Crumbliacci's Blog"
 theme: "anubis"
 paginate: 10
 enableRobotsTXT: true
@@ -21,7 +21,7 @@ menu:
 params:
   author: "Jay Crumb"
   email: jay@aardonyx.ca
-  avatar: "/images/me.png" # used for microformats
+  avatar: "/images/me.jpg" # used for microformats
   description: ""
   dateFormat: "2006-01-02"
   paginationSinglePost: true
