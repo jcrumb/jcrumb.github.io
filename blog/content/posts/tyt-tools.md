@@ -1,13 +1,12 @@
 ---
 title: "TYT TH-UV88 Hacks: Unlock Transmit Frequencies, Factory Tools and More"
 date: 2021-05-30T15:14:52-06:00
-draft: true
 tags:
 - radio
 - tech
 summary: >
-    In this article we'll walk through how to unlock the transmit frequencies of a TYT TH-UV88, open up the factory tuning tools and explore 
-    the configurations available in the software.
+    The TYT TH-UV88 is the cheapest commercial radio you can buy in Canada -- but only if you have the right tools. 
+    Let's walk through some bad code and figure out how this $50 radio is configured.
 ---
 
 ***Disclaimer: The procedures described below allow you to modify the transmission range of your TYT TH-UV88, including unlocking frequencies that may be illegal for you to
