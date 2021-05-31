@@ -4,6 +4,7 @@ title: "Crumbliacci's Blog"
 theme: "anubis"
 paginate: 10
 enableRobotsTXT: true
+googleAnalytics: "G-PMSMF8C2BN"
 
 menu:
   main:
