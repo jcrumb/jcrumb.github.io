@@ -1,5 +1,5 @@
 ---
-title: "TYT TH-UV88 Hacks: Unlock Transmit Frequencies, Factory Tools and More"
+title: "TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools"
 date: 2021-05-30T15:14:52-06:00
 tags:
 - radio
