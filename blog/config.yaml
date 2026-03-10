@@ -29,7 +29,6 @@ params:
   style: light-without-switcher
   readMore: true
   disableSummary: false
-  style: auto
   social:
     - id: github
       name: jcrumb
