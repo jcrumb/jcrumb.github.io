@@ -201,7 +201,7 @@ when new login items are added.&lt;/p&gt;
 &lt;/h1&gt;&lt;p&gt;This is almost certainly an AMOS affiliate campaign - I&amp;rsquo;m not certain that both instances I&amp;rsquo;ve seen were actually the same campaign since we halted
 execution in one case, but the successful execution made references to a campaign ID of &lt;code&gt;wusetail.com&lt;/code&gt;, and had &lt;code&gt;avipstudios.com&lt;/code&gt; as a fallback
 C2 domain. Data exfiltration happened to &lt;code&gt;38.244.158.103&lt;/code&gt; which is located in the Netherlands. In both cases, the initial payload &lt;em&gt;domain&lt;/em&gt; differed,
-but the path for was &lt;code&gt;/n8n/update&lt;/code&gt;.&lt;/p&gt;
+but the path was &lt;code&gt;/n8n/update&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;Darktrace&amp;rsquo;s research also noted an IP located in the Netherlands but on a different ASN. What was the same was the exfiltration path of &lt;code&gt;/api/tasks/&amp;lt;base64 string&amp;gt;&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;Since this is a fairly &amp;ldquo;standard&amp;rdquo; malware, most EDR vendors should have good IOCs in general here.&lt;/p&gt;
 &lt;h1 id=&#34;lessons-learned&#34; &gt;Lessons Learned
