@@ -1,165 +1,20 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>radio on Crumbliacci's Blog</title><link>https://jcrumb.github.io/tags/radio/</link><description>Crumbliacci's Blog (radio)</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 30 May 2021 15:14:52 -0600</lastBuildDate><atom:link href="https://jcrumb.github.io/tags/radio/index.xml" rel="self" type="application/rss+xml"/><item><title>TYT TH-UV88 Hacks: Unlock Transmit Frequencies, Factory Tools and More</title><link>https://jcrumb.github.io/posts/tyt-tools/</link><pubDate>Sun, 30 May 2021 15:14:52 -0600</pubDate><guid>https://jcrumb.github.io/posts/tyt-tools/</guid><description>&lt;p>&lt;em>&lt;strong>Disclaimer: The procedures described below allow you to modify the transmission range of your TYT TH-UV88, including unlocking frequencies that may be illegal for you to
-transmit on depending on your jurisdiction. Proceed at your own risk, and ensure that you&amp;rsquo;re compliant with local laws around transmission frequencies.&lt;/strong>&lt;/em>&lt;/p>
-&lt;p>&lt;em>If you would like to skip the technical background and jump straight to instructions click &lt;a href="#putting-it-all-together">here&lt;/a>&lt;/em>&lt;/p>
-&lt;hr>
-&lt;p>I recently picked up a &lt;a href="https://www.fleetwooddp.com/collections/handheld-amateur-ham-radios-and-walkie-talkies-for-business-and-family-use/products/tyt-th-uv88-dual-band-pure-amateur-ham-radio">TYT TH-UV88&lt;/a> hoping to have a cheap option for backroads use in Canada.
-As far as I know, this is the cheapest radio that has an ISED certification number for land mobile use, which is a special class of radios that operate outside of
-the designated amateur bands. These radios are commonly used for commercial traffic, and are especially handy on forestry roads so as not to get creamed by a
-logging truck.&lt;/p>
-&lt;p>&lt;img src="https://jcrumb.github.io/blogimages/tyt/tyt.png" alt="TYT Radio">&lt;/p>
-&lt;p>When I picked out this radio I figured it would be a simple job to program the &lt;a href="https://www.ic.gc.ca/eic/site/smt-gst.nsf/eng/sf11127.html">standard Resource Road channels&lt;/a>,
-grab a license online from ISED and be on my way. I couldn&amp;rsquo;t understand why vendors were charging more than the value of the radio itself to program the channels.&lt;/p>
-&lt;h1 id="the-problem">The Problem&lt;/h1>
-&lt;p>Turns out that when you buy a TH-UV88 in Canada, out of the box it&amp;rsquo;s locked to amateur frequencies. You can program the channels relatively easily, but when
-you try to transmit on them you&amp;rsquo;ll simply be kicked back to the last amateur frequency used. I contacted the vendor where I got my radio, and they informed me that
-unlocking the transmit ranges required software only supplied to dealers and I&amp;rsquo;d have to ship it back to them for programming.&lt;/p>
-&lt;p>I had a sneaking suspicion that the &amp;ldquo;dealer only&amp;rdquo; software required was probably the same as the consumer software with a few tweaks or extra menus. Given the quality of software
-often seen with these cheap handhelds the idea that they were actually shipping two separate software packages seemed far-fetched, so I started digging.&lt;/p>
-&lt;h1 id="a-bit-of-code-spelunking">A Bit of Code Spelunking&lt;/h1>
-&lt;p>The first step was looking into the &lt;code>setting.ini&lt;/code> file that comes bundled with the software. As soon as I opened this up, my suspicions about the software being the same became a lot
-stronger, as there were a couple settings that looked interesting:&lt;/p>
-&lt;div class="highlight">&lt;pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-txt" data-lang="txt">[setup]
-language=english
-testmode=0
-Factory=0
-password=0
-RadioName=UV-88
-CompanyName=TYT INC.(C)
-SoftVer=Ver1.0
-CompleteTime=2016.08.05
-COMSelect=COM5
-Baudradio=115200
-exepassword=777777
-languagemenu=0
-OwnUsed=5
-voiceencrypt=1
-timesetting=0
-gpssystem=0
-Chinese=Traditional
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>in particular, &lt;code>testmode&lt;/code>, &lt;code>Factory&lt;/code> and &lt;code>OwnUsed&lt;/code> looked like they might be useful. With that out of the way, I stumbled onto another piece of good news when launching
-the software from a non-default location; it crashed with an error message that let me know it was written with the .NET Framework, which is easy to decompile
-and results in some very readable code. Jackpot!&lt;/p>
-&lt;h3 id="give-up-your-secrets">Give Up Your Secrets!&lt;/h3>
-&lt;p>I fired up &lt;a href="https://www.jetbrains.com/decompiler/">DotPeek&lt;/a> and got to work. There was a very helpfully named &lt;code>FatherWin.cs&lt;/code> class that looked
-like it contained the logic for the main application window, and was responsible for loading the configuration file we saw earlier. A lot of it is fairly inscrutable
-&lt;code>this.toolStripMenuItem3.Name = &amp;quot;toolStripMenuItem3&amp;quot;;&lt;/code> nonsense, but after a bit of reading I found this gem:&lt;/p>
-&lt;div class="highlight">&lt;pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-cs" data-lang="cs">&lt;span style="color:#66d9ef">if&lt;/span> (strArray[&lt;span style="color:#ae81ff">13&lt;/span>].Substring(num13 + &lt;span style="color:#ae81ff">1&lt;/span>, strArray[&lt;span style="color:#ae81ff">13&lt;/span>].Length - num13 - &lt;span style="color:#ae81ff">1&lt;/span>) == &lt;span style="color:#e6db74">&amp;#34;ARRVIN&amp;#34;&lt;/span>)
-{
-Class1.LanguageDisEable = &lt;span style="color:#e6db74">&amp;#34;Enable&amp;#34;&lt;/span>;
-Class1.FactoryEn = &lt;span style="color:#66d9ef">true&lt;/span>;
-Class1.GbTestModEn = &lt;span style="color:#66d9ef">true&lt;/span>;
-Class1.GbOwnUsedEn = &lt;span style="color:#66d9ef">true&lt;/span>;
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>I set &lt;code>OwnUsed=ARRVIN&lt;/code> in the configuration file, figuring I was in business &amp;ndash; but it was not to be. When you have the factory mode enabled, the app starts up with a
-registration screen:&lt;/p>
-&lt;p>&lt;img src="https://jcrumb.github.io/blogimages/tyt/reg-screen.png" alt="TYT Registration Screen">&lt;/p>
-&lt;p>The code generated is based on the serial number of the first attached hard drive on your machine. My assumption is that dealers send this code to the factory, who can generate a matching one for the registration window. Here&amp;rsquo;s the function that does the key generation, where &lt;code>strTest&lt;/code> is your hard drive serial:&lt;/p>
-&lt;div class="highlight">&lt;pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-cs" data-lang="cs">&lt;span style="color:#66d9ef">public&lt;/span> &lt;span style="color:#66d9ef">static&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span> CodeAdj(&lt;span style="color:#66d9ef">string&lt;/span> strTest, &lt;span style="color:#66d9ef">int&lt;/span> Code)
-{
-&lt;span style="color:#66d9ef">string&lt;/span> strTest1 = &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>;
-&lt;span style="color:#66d9ef">for&lt;/span> (&lt;span style="color:#66d9ef">int&lt;/span> index = &lt;span style="color:#ae81ff">0&lt;/span>; index &amp;lt;= &lt;span style="color:#ae81ff">3&lt;/span>; ++index)
-{
-&lt;span style="color:#66d9ef">string&lt;/span> str = RegditWin.StrAutoAdd0Pro(
-RegditWin.DataToHexStr(
-Convert.ToInt32(strTest.Substring(&lt;span style="color:#ae81ff">8&lt;/span> * index, &lt;span style="color:#ae81ff">8&lt;/span>), &lt;span style="color:#ae81ff">16&lt;/span>) ^ &lt;span style="color:#ae81ff">1108691062&lt;/span>),
-(&lt;span style="color:#66d9ef">byte&lt;/span>) &lt;span style="color:#ae81ff">8&lt;/span>
-);
-strTest1 += str;
-}
-strTest = RegditWin.Chga_z_ToA_Z(strTest1);
-&lt;span style="color:#66d9ef">return&lt;/span> strTest;
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>Luckily, I didn&amp;rsquo;t have to expend too much brain power in reverse engineering how this code generation works to make my own key as the developers left a handy backdoor:&lt;/p>
-&lt;div class="highlight">&lt;pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-cs" data-lang="cs">&lt;span style="color:#66d9ef">if&lt;/span> (str3 == text || text == &lt;span style="color:#e6db74">&amp;#34;13636922224&amp;#34;&lt;/span>)
-{
-&lt;span style="color:#66d9ef">int&lt;/span> num = (&lt;span style="color:#66d9ef">int&lt;/span>) MessageBox.Show(&lt;span style="color:#e6db74">&amp;#34;注册成功,谢谢使用！&amp;#34;&lt;/span>);
-...
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>The text above translates to &amp;ldquo;Registration is successful, thank you for using!&amp;rdquo;. Done and dusted, and now we have factory tooling available for use!&lt;/p>
-&lt;h3 id="frequency-unlocking">Frequency Unlocking&lt;/h3>
-&lt;p>As I mentioned above, my main goal was unlocking the radio to allow transmitting outside of the amateur 2m band (144-148MHz). Unfortunately, unlocking the factory mode on its
-own is not enough to do this. The frequency range menu is still read-only and won&amp;rsquo;t allow adjustment of the values. Back into the code we go.&lt;/p>
-&lt;p>I pulled up &lt;code>RfRangWin.cs&lt;/code> which contains the code for the frequency limitation UI, and found a couple strings that suggested I was on the right path:&lt;/p>
-&lt;div class="highlight">&lt;pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-cs" data-lang="cs"> &lt;span style="color:#66d9ef">public&lt;/span> &lt;span style="color:#66d9ef">static&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>[,] Other_EngCh = &lt;span style="color:#66d9ef">new&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>[&lt;span style="color:#ae81ff">2&lt;/span>, &lt;span style="color:#ae81ff">2&lt;/span>]
-{
-{
-&lt;span style="color:#e6db74">&amp;#34;请输入密码:&amp;#34;&lt;/span>,
-&lt;span style="color:#e6db74">&amp;#34;频段范围&amp;#34;&lt;/span>
-},
-{
-&lt;span style="color:#e6db74">&amp;#34;Enter Code:&amp;#34;&lt;/span>,
-&lt;span style="color:#e6db74">&amp;#34;Frequency Range&amp;#34;&lt;/span>
-}
-};
-&lt;span style="color:#66d9ef">private&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>[,] MessBoxName = &lt;span style="color:#66d9ef">new&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>[&lt;span style="color:#ae81ff">2&lt;/span>, &lt;span style="color:#ae81ff">2&lt;/span>]
-{
-{
-&lt;span style="color:#e6db74">&amp;#34;当前频率超出范围 [&amp;#34;&lt;/span>,
-&lt;span style="color:#e6db74">&amp;#34;密码错误！请重新输入！&amp;#34;&lt;/span>
-},
-{
-&lt;span style="color:#e6db74">&amp;#34;Frequency Out Off Rang [ &amp;#34;&lt;/span>,
-&lt;span style="color:#e6db74">&amp;#34;Code Error!Input Again!&amp;#34;&lt;/span>
-}
-};
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>There was another gate here to prevent tweaking the VFO limiter without some kind of authorization. You can show the code entry box by pressing &lt;code>p&lt;/code>
-in the frequency range screen, as long as you have factory mode enabled:&lt;/p>
-&lt;div class="highlight">&lt;pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-cs" data-lang="cs">&lt;span style="color:#66d9ef">private&lt;/span> &lt;span style="color:#66d9ef">void&lt;/span> RfRangWin_KeyPress(&lt;span style="color:#66d9ef">object&lt;/span> sender, KeyPressEventArgs e)
-{
-&lt;span style="color:#66d9ef">if&lt;/span> (e.KeyChar != &lt;span style="color:#e6db74">&amp;#39;p&amp;#39;&lt;/span> || !Class1.FactoryEn)
-&lt;span style="color:#66d9ef">return&lt;/span>;
-&lt;span style="color:#66d9ef">this&lt;/span>.label1.Visible = &lt;span style="color:#66d9ef">true&lt;/span>;
-&lt;span style="color:#66d9ef">this&lt;/span>.textBox2.Visible = &lt;span style="color:#66d9ef">true&lt;/span>;
-&lt;span style="color:#66d9ef">this&lt;/span>.button1.Visible = &lt;span style="color:#66d9ef">true&lt;/span>;
-Class1.EditEn = &lt;span style="color:#66d9ef">false&lt;/span>;
-&lt;span style="color:#66d9ef">this&lt;/span>.textBox2.Focus();
-&lt;span style="color:#66d9ef">this&lt;/span>.KeyPreview = &lt;span style="color:#66d9ef">false&lt;/span>;
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>As before, the code we need to enter is hardcoded in the button press handler:&lt;/p>
-&lt;div class="highlight">&lt;pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-cs" data-lang="cs">&lt;span style="color:#66d9ef">if&lt;/span> (&lt;span style="color:#66d9ef">this&lt;/span>.textBox2.Text == &lt;span style="color:#e6db74">&amp;#34;FF88&amp;#34;&lt;/span> || &lt;span style="color:#66d9ef">this&lt;/span>.textBox2.Text == &lt;span style="color:#e6db74">&amp;#34;13636922224&amp;#34;&lt;/span>)
-{
-&lt;span style="color:#66d9ef">this&lt;/span>.label1.Visible = &lt;span style="color:#66d9ef">false&lt;/span>;
-&lt;span style="color:#66d9ef">this&lt;/span>.textBox2.Visible = &lt;span style="color:#66d9ef">false&lt;/span>;
-&lt;span style="color:#66d9ef">this&lt;/span>.button1.Visible = &lt;span style="color:#66d9ef">false&lt;/span>;
-Class1.EditEn = &lt;span style="color:#66d9ef">true&lt;/span>;
-&lt;span style="color:#66d9ef">this&lt;/span>.button2.Visible = &lt;span style="color:#66d9ef">true&lt;/span>;
-&lt;span style="color:#66d9ef">this&lt;/span>.button3.Visible = &lt;span style="color:#66d9ef">true&lt;/span>;
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>With this done, we can finally change the frequency limitations:
-&lt;img src="https://jcrumb.github.io/blogimages/tyt/frequencies.png" alt="TYT Frequencies Unlocked">&lt;/p>
-&lt;h1 id="putting-it-all-together">Putting It All Together&lt;/h1>
-&lt;p>To unlock the frequencies, factory tools, and test mode of your TYT TH-UV88:&lt;/p>
-&lt;ul>
-&lt;li>Find the install location for the software (by default this is &lt;code>C:/UV88 V1.00&lt;/code>)&lt;/li>
-&lt;li>In the subdirectory &lt;code>Uv88_SoftWare_Eng&lt;/code> open the included &lt;code>setting.ini&lt;/code> file&lt;/li>
-&lt;li>Change the value of &lt;code>OwnUsed&lt;/code> to &lt;code>ARRVIN&lt;/code> and save it. You&amp;rsquo;ll need to launch the software as an administrator from now on.&lt;/li>
-&lt;li>Run TH-UV88.exe, you will get a popup asking for a reg code. Put in &lt;code>13636922224&lt;/code>.&lt;/li>
-&lt;/ul>
-&lt;p>You now have access to the factory tuning tools and test mode. To unlock transmission frequencies:&lt;/p>
-&lt;ul>
-&lt;li>Open the frequency range menu from the left-hand side of the app&lt;/li>
-&lt;li>Press &lt;code>p&lt;/code> to reveal another code box&lt;/li>
-&lt;li>Enter the code &lt;code>13636922224&lt;/code> again&lt;/li>
-&lt;li>Change the frequency values as needed and confirm&lt;/li>
-&lt;li>Write changes to your radio&lt;/li>
-&lt;/ul>
-&lt;h1 id="whats-next">What&amp;rsquo;s Next?&lt;/h1>
-&lt;p>I haven&amp;rsquo;t played much with the factory tooling that&amp;rsquo;s unlocked. Some of it looks like it has a high potential for breaking things, and what I was really after
-(locking the front panel of the radio) doesn&amp;rsquo;t appear to be in there. But, some options for those of you who are more adventurous than me:
-&lt;img src="https://jcrumb.github.io/blogimages/tyt/basisadj.png" alt="TYT Basis Adjustment">&lt;/p>
-&lt;p>I&amp;rsquo;m also still searching for a way to lock the handset out of VFO mode and allow only selecting from the loaded channels. This is required under section 3.2 of RSS-119 for Land Mobile
-use in Canada:&lt;/p>
-&lt;blockquote>
-&lt;p>Transmitters With External Frequency Selection Controls&lt;/p>
-&lt;p>In order to prevent radio interference caused by end-user transmissions on unauthorized frequencies, transmitters with external frequency selection controls and/or frequency programming capability shall conform to the following:&lt;/p>
-&lt;ul>
-&lt;li>Transmitters with external frequency selection controls shall operate only on authorized channels which have been preset by the manufacturer, equipment supplier, service technician or maintenance personnel.&lt;/li>
-&lt;li>Transmitters with frequency programming capability must have at least one of the following design characteristics, which prevent the user from altering the preset frequencies:&lt;/li>
-&lt;li>Transmitters with external controls available to the user can only be internally modified to place the equipment in the programmable mode. Furthermore, while in the programmable mode, the equipment is not capable of transmitting. The procedure for making the modification and altering the frequency program is not available to the user of the equipment.&lt;/li>
-&lt;li>Transmitters are programmed for frequencies through controls that are inaccessible to the user.&lt;/li>
-&lt;li>Transmitters are programmed for frequencies through the use of external devices or specifically programmed modules that are available only to the service technician or maintenance personnel.&lt;/li>
-&lt;li>Transmitters are programmed through cloning (i.e., copying a program directly from another transmitter) using devices and procedures that are available only to the service technician or maintenance personnel.&lt;/li>
-&lt;/ul>
-&lt;/blockquote>
-&lt;p>It&amp;rsquo;s possible to do this, and the same model purchased in the U.S. has the panel locked out of the box. I have yet to find the relevant config in the software and it may be a true
-factory-only option. At your own risk, you may be able to just leave the radio in channelled mode and hope that anyone checking doesn&amp;rsquo;t know how to toggle back to VFO mode
-which is done by pressing the &lt;code>#&lt;/code> key.&lt;/p></description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Radio on Crumbliacci&#39;s Blog</title>
+    <link>https://jcrumb.github.io/tags/radio/</link>
+    <description>Recent content in Radio on Crumbliacci&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>en-US</language>
+    <copyright>Copyright © Jay Crumb</copyright>
+    <lastBuildDate>Sun, 30 May 2021 15:14:52 -0600</lastBuildDate>
+    <atom:link href="https://jcrumb.github.io/tags/radio/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools</title>
+      <link>https://jcrumb.github.io/tyt-th-uv88-hacks-unlock-transmit-frequencies-and-factory-tools/</link>
+      <pubDate>Sun, 30 May 2021 15:14:52 -0600</pubDate>
+      <guid>https://jcrumb.github.io/tyt-th-uv88-hacks-unlock-transmit-frequencies-and-factory-tools/</guid>
+      <description>The TYT TH-UV88 is the cheapest commercial radio you can buy in Canada &amp;ndash; but only if you have the right tools.  Let&amp;rsquo;s walk through some bad code and figure out how this $50 radio is configured.</description>
+    </item>
+  </channel>
+</rss>

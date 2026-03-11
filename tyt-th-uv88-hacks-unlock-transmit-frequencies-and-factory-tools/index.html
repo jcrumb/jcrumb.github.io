@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+  <meta http-equiv="X-Clacks-Overhead" content="GNU Terry Pratchett" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="shortcut icon" href="https://jcrumb.github.io/images/favicon.png" />
+<title>TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools | Crumbliacci&#39;s Blog</title>
+<meta name="title" content="TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools" />
+<meta name="description" content="The TYT TH-UV88 is the cheapest commercial radio you can buy in Canada &ndash; but only if you have the right tools.  Let&rsquo;s walk through some bad code and figure out how this $50 radio is configured." />
+<meta name="keywords" content="radio,tech," />
+
+
+<meta property="og:url" content="https://jcrumb.github.io/tyt-th-uv88-hacks-unlock-transmit-frequencies-and-factory-tools/">
+  <meta property="og:site_name" content="Crumbliacci&#39;s Blog">
+  <meta property="og:title" content="TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools">
+  <meta property="og:description" content="The TYT TH-UV88 is the cheapest commercial radio you can buy in Canada – but only if you have the right tools.  Let’s walk through some bad code and figure out how this $50 radio is configured.">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="blog">
+    <meta property="article:published_time" content="2021-05-30T15:14:52-06:00">
+    <meta property="article:modified_time" content="2021-05-30T15:14:52-06:00">
+    <meta property="article:tag" content="Radio">
+    <meta property="article:tag" content="Tech">
+
+
+
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools">
+  <meta name="twitter:description" content="The TYT TH-UV88 is the cheapest commercial radio you can buy in Canada – but only if you have the right tools.  Let’s walk through some bad code and figure out how this $50 radio is configured.">
+
+
+
+
+  <meta itemprop="name" content="TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools">
+  <meta itemprop="description" content="The TYT TH-UV88 is the cheapest commercial radio you can buy in Canada – but only if you have the right tools.  Let’s walk through some bad code and figure out how this $50 radio is configured.">
+  <meta itemprop="datePublished" content="2021-05-30T15:14:52-06:00">
+  <meta itemprop="dateModified" content="2021-05-30T15:14:52-06:00">
+  <meta itemprop="wordCount" content="1559">
+  <meta itemprop="keywords" content="Radio,Tech">
+<meta name="referrer" content="no-referrer-when-downgrade" />
+
+  <style>
+  :root {
+    --width: 720px;
+    --font-main: Verdana, sans-serif;
+    --font-secondary: Verdana, sans-serif;
+    --font-scale: 1em;
+    --background-color: #fff;
+    --heading-color: #222;
+    --text-color: #444;
+    --link-color: #3273dc;
+    --visited-color: #8b6fcb;
+    --blockquote-color: #222;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background-color: #01242e;
+      --heading-color: #eee;
+      --text-color: #ddd;
+      --link-color: #8cc2dd;
+      --visited-color: #8b6fcb;
+      --blockquote-color: #ccc;
+    }
+  }
+
+  body {
+    font-family: var(--font-secondary);
+    font-size: var(--font-scale);
+    margin: auto;
+    padding: 20px;
+    max-width: var(--width);
+    text-align: left;
+    background-color: var(--background-color);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+    color: var(--text-color);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-main);
+    color: var(--heading-color);
+  }
+
+  a {
+    color: var(--link-color);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  nav a {
+    margin-right: 8px;
+  }
+
+  strong,
+  b {
+    color: var(--heading-color);
+  }
+
+  button {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  time {
+    font-family: monospace;
+    font-style: normal;
+    font-size: 15px;
+  }
+
+  main {
+    line-height: 1.6;
+  }
+
+  table {
+    width: 100%;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px dashed;
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  code {
+    font-family: monospace;
+    padding: 2px;
+    border-radius: 3px;
+  }
+
+  blockquote {
+    border-left: 1px solid #999;
+    color: var(--blockquote-color);
+    padding-left: 20px;
+    font-style: italic;
+  }
+
+  footer {
+    padding: 25px 0;
+    text-align: center;
+  }
+
+  .title:hover {
+    text-decoration: none;
+  }
+
+  .title h1 {
+    font-size: 1.5em;
+  }
+
+  .inline {
+    width: auto !important;
+  }
+
+  .highlight,
+  .code {
+    border-radius: 3px;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    overflow-x: auto;
+  }
+
+   
+  ul.blog-posts {
+    list-style-type: none;
+    padding: unset;
+  }
+
+  ul.blog-posts li {
+    display: flex;
+  }
+
+  ul.blog-posts li span {
+    flex: 0 0 130px;
+  }
+
+  ul.blog-posts li a:visited {
+    color: var(--visited-color);
+  }
+
+</style>
+<style>
+  ul.blog-posts li {
+    flex-direction: column;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color, #eee);
+  }
+
+  ul.blog-posts li:last-child {
+    border-bottom: none;
+  }
+
+  ul.blog-posts li .post-title-row {
+    display: flex;
+    align-items: baseline;
+  }
+
+  ul.blog-posts li .post-title-row span {
+    flex: 0 0 130px;
+  }
+
+  ul.blog-posts li p {
+    margin: 0.15rem 0 0 130px;
+    color: var(--text-muted, #555);
+    font-size: 0.95em;
+  }
+</style>
+</head>
+
+<body>
+  <header><a href="/" class="title">
+  <h2>Crumbliacci&#39;s Blog</h2>
+</a>
+<nav>
+<a href="/">Home</a>
+
+</nav>
+</header>
+  <main>
+
+<h1>TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools</h1>
+<p>
+  <i>
+    <time datetime='2021-05-30'>
+      2021-05-30
+    </time>
+  </i>
+</p>
+
+<content>
+  <p><em><strong>Disclaimer: The procedures described below allow you to modify the transmission range of your TYT TH-UV88, including unlocking frequencies that may be illegal for you to
+transmit on depending on your jurisdiction. Proceed at your own risk, and ensure that you&rsquo;re compliant with local laws around transmission frequencies.</strong></em></p>
+<p><em>If you would like to skip the technical background and jump straight to instructions click <a href="#putting-it-all-together">here</a></em></p>
+<hr>
+<p>I recently picked up a <a href="https://www.fleetwooddp.com/collections/handheld-amateur-ham-radios-and-walkie-talkies-for-business-and-family-use/products/tyt-th-uv88-dual-band-pure-amateur-ham-radio">TYT TH-UV88</a> hoping to have a cheap option for backroads use in Canada.
+As far as I know, this is the cheapest radio that has an ISED certification number for land mobile use, which is a special class of radios that operate outside of
+the designated amateur bands. These radios are commonly used for commercial traffic, and are especially handy on forestry roads so as not to get creamed by a
+logging truck.</p>
+<p><img src="/blogimages/tyt/tyt.png" alt="TYT Radio"></p>
+<p>When I picked out this radio I figured it would be a simple job to program the <a href="https://www.ic.gc.ca/eic/site/smt-gst.nsf/eng/sf11127.html">standard Resource Road channels</a>,
+grab a license online from ISED and be on my way. I couldn&rsquo;t understand why vendors were charging more than the value of the radio itself to program the channels.</p>
+<h1 id="the-problem">The Problem</h1>
+<p>Turns out that when you buy a TH-UV88 in Canada, out of the box it&rsquo;s locked to amateur frequencies. You can program the channels relatively easily, but when
+you try to transmit on them you&rsquo;ll simply be kicked back to the last amateur frequency used. I contacted the vendor where I got my radio, and they informed me that
+unlocking the transmit ranges required software only supplied to dealers and I&rsquo;d have to ship it back to them for programming.</p>
+<p>I had a sneaking suspicion that the &ldquo;dealer only&rdquo; software required was probably the same as the consumer software with a few tweaks or extra menus. Given the quality of software
+often seen with these cheap handhelds the idea that they were actually shipping two separate software packages seemed far-fetched, so I started digging.</p>
+<h1 id="a-bit-of-code-spelunking">A Bit of Code Spelunking</h1>
+<p>The first step was looking into the <code>setting.ini</code> file that comes bundled with the software. As soon as I opened this up, my suspicions about the software being the same became a lot
+stronger, as there were a couple settings that looked interesting:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-txt" data-lang="txt"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span>[setup]
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span>language=english
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span>testmode=0
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span>Factory=0
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span>password=0
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span>RadioName=UV-88
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span>CompanyName=TYT INC.(C)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span>SoftVer=Ver1.0
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span>CompleteTime=2016.08.05
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span>COMSelect=COM5
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11</span><span>Baudradio=115200
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12</span><span>exepassword=777777
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13</span><span>languagemenu=0
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14</span><span>OwnUsed=5
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15</span><span>voiceencrypt=1
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16</span><span>timesetting=0
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17</span><span>gpssystem=0
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18</span><span>Chinese=Traditional
+</span></span></code></pre></div><p>in particular, <code>testmode</code>, <code>Factory</code> and <code>OwnUsed</code> looked like they might be useful. With that out of the way, I stumbled onto another piece of good news when launching
+the software from a non-default location; it crashed with an error message that let me know it was written with the .NET Framework, which is easy to decompile
+and results in some very readable code. Jackpot!</p>
+<h3 id="give-up-your-secrets">Give Up Your Secrets!</h3>
+<p>I fired up <a href="https://www.jetbrains.com/decompiler/">DotPeek</a> and got to work. There was a very helpfully named <code>FatherWin.cs</code> class that looked
+like it contained the logic for the main application window, and was responsible for loading the configuration file we saw earlier. A lot of it is fairly inscrutable
+<code>this.toolStripMenuItem3.Name = &quot;toolStripMenuItem3&quot;;</code> nonsense, but after a bit of reading I found this gem:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-cs" data-lang="cs"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span><span style="color:#007020;font-weight:bold">if</span> (strArray[<span style="color:#40a070">13</span>].Substring(num13 + <span style="color:#40a070">1</span>, strArray[<span style="color:#40a070">13</span>].Length - num13 - <span style="color:#40a070">1</span>) == <span style="color:#4070a0">&#34;ARRVIN&#34;</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>{
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span>    Class1.LanguageDisEable = <span style="color:#4070a0">&#34;Enable&#34;</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4</span><span>    Class1.FactoryEn = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5</span><span>    Class1.GbTestModEn = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6</span><span>    Class1.GbOwnUsedEn = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7</span><span>}
+</span></span></code></pre></div><p>I set <code>OwnUsed=ARRVIN</code> in the configuration file, figuring I was in business &ndash; but it was not to be. When you have the factory mode enabled, the app starts up with a
+registration screen:</p>
+<p><img src="/blogimages/tyt/reg-screen.png" alt="TYT Registration Screen"></p>
+<p>The code generated is based on the serial number of the first attached hard drive on your machine. My assumption is that dealers send this code to the factory, who can generate a matching one for the registration window. Here&rsquo;s the function that does the key generation, where <code>strTest</code> is your hard drive serial:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-cs" data-lang="cs"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span><span style="color:#007020;font-weight:bold">public</span> <span style="color:#007020;font-weight:bold">static</span> <span style="color:#902000">string</span> CodeAdj(<span style="color:#902000">string</span> strTest, <span style="color:#902000">int</span> Code)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span>{
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span>    <span style="color:#902000">string</span> strTest1 = <span style="color:#4070a0">&#34;&#34;</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span>    <span style="color:#007020;font-weight:bold">for</span> (<span style="color:#902000">int</span> index = <span style="color:#40a070">0</span>; index &lt;= <span style="color:#40a070">3</span>; ++index)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span>    {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span>    <span style="color:#902000">string</span> str = RegditWin.StrAutoAdd0Pro(
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span>        RegditWin.DataToHexStr(
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span>            Convert.ToInt32(strTest.Substring(<span style="color:#40a070">8</span> * index, <span style="color:#40a070">8</span>), <span style="color:#40a070">16</span>) ^ <span style="color:#40a070">1108691062</span>), 
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span>            (<span style="color:#902000">byte</span>) <span style="color:#40a070">8</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span>    );
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11</span><span>    strTest1 += str;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12</span><span>    }
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13</span><span>    strTest = RegditWin.Chga_z_ToA_Z(strTest1);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14</span><span>    <span style="color:#007020;font-weight:bold">return</span> strTest;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15</span><span>}
+</span></span></code></pre></div><p>Luckily, I didn&rsquo;t have to expend too much brain power in reverse engineering how this code generation works to make my own key as the developers left a handy backdoor:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-cs" data-lang="cs"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span><span style="color:#007020;font-weight:bold">if</span> (str3 == text || text == <span style="color:#4070a0">&#34;13636922224&#34;</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>{
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span>    <span style="color:#902000">int</span> num = (<span style="color:#902000">int</span>) MessageBox.Show(<span style="color:#4070a0">&#34;注册成功,谢谢使用！&#34;</span>);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4</span><span>...
+</span></span></code></pre></div><p>The text above translates to &ldquo;Registration is successful, thank you for using!&rdquo;. Done and dusted, and now we have factory tooling available for use!</p>
+<h3 id="frequency-unlocking">Frequency Unlocking</h3>
+<p>As I mentioned above, my main goal was unlocking the radio to allow transmitting outside of the amateur 2m band (144-148MHz). Unfortunately, unlocking the factory mode on its
+own is not enough to do this. The frequency range menu is still read-only and won&rsquo;t allow adjustment of the values. Back into the code we go.</p>
+<p>I pulled up <code>RfRangWin.cs</code> which contains the code for the frequency limitation UI, and found a couple strings that suggested I was on the right path:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-cs" data-lang="cs"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span> <span style="color:#007020;font-weight:bold">public</span> <span style="color:#007020;font-weight:bold">static</span> <span style="color:#902000">string</span>[,] Other_EngCh = <span style="color:#007020;font-weight:bold">new</span> <span style="color:#902000">string</span>[<span style="color:#40a070">2</span>, <span style="color:#40a070">2</span>]
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span>    {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span>      {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span>        <span style="color:#4070a0">&#34;请输入密码:&#34;</span>,
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span>        <span style="color:#4070a0">&#34;频段范围&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span>      },
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span>      {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span>        <span style="color:#4070a0">&#34;Enter Code:&#34;</span>,
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span>        <span style="color:#4070a0">&#34;Frequency Range&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span>      }
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11</span><span>    };
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12</span><span>    <span style="color:#007020;font-weight:bold">private</span> <span style="color:#902000">string</span>[,] MessBoxName = <span style="color:#007020;font-weight:bold">new</span> <span style="color:#902000">string</span>[<span style="color:#40a070">2</span>, <span style="color:#40a070">2</span>]
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13</span><span>    {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14</span><span>      {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15</span><span>        <span style="color:#4070a0">&#34;当前频率超出范围   [&#34;</span>,
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16</span><span>        <span style="color:#4070a0">&#34;密码错误！请重新输入！&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17</span><span>      },
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18</span><span>      {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19</span><span>        <span style="color:#4070a0">&#34;Frequency Out Off Rang   [  &#34;</span>,
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20</span><span>        <span style="color:#4070a0">&#34;Code Error!Input Again!&#34;</span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21</span><span>      }
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22</span><span>    };
+</span></span></code></pre></div><p>There was another gate here to prevent tweaking the VFO limiter without some kind of authorization. You can show the code entry box by pressing <code>p</code>
+in the frequency range screen, as long as you have factory mode enabled:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-cs" data-lang="cs"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span><span style="color:#007020;font-weight:bold">private</span> <span style="color:#007020;font-weight:bold">void</span> RfRangWin_KeyPress(<span style="color:#902000">object</span> sender, KeyPressEventArgs e)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span>    {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span>      <span style="color:#007020;font-weight:bold">if</span> (e.KeyChar != <span style="color:#4070a0">&#39;p&#39;</span> || !Class1.FactoryEn)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span>        <span style="color:#007020;font-weight:bold">return</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span>      <span style="color:#007020;font-weight:bold">this</span>.label1.Visible = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span>      <span style="color:#007020;font-weight:bold">this</span>.textBox2.Visible = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span>      <span style="color:#007020;font-weight:bold">this</span>.button1.Visible = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span>      Class1.EditEn = <span style="color:#007020;font-weight:bold">false</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span>      <span style="color:#007020;font-weight:bold">this</span>.textBox2.Focus();
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span>      <span style="color:#007020;font-weight:bold">this</span>.KeyPreview = <span style="color:#007020;font-weight:bold">false</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11</span><span>    }
+</span></span></code></pre></div><p>As before, the code we need to enter is hardcoded in the button press handler:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-cs" data-lang="cs"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span><span style="color:#007020;font-weight:bold">if</span> (<span style="color:#007020;font-weight:bold">this</span>.textBox2.Text == <span style="color:#4070a0">&#34;FF88&#34;</span> || <span style="color:#007020;font-weight:bold">this</span>.textBox2.Text == <span style="color:#4070a0">&#34;13636922224&#34;</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>{
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span><span style="color:#007020;font-weight:bold">this</span>.label1.Visible = <span style="color:#007020;font-weight:bold">false</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4</span><span><span style="color:#007020;font-weight:bold">this</span>.textBox2.Visible = <span style="color:#007020;font-weight:bold">false</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5</span><span><span style="color:#007020;font-weight:bold">this</span>.button1.Visible = <span style="color:#007020;font-weight:bold">false</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6</span><span>Class1.EditEn = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7</span><span><span style="color:#007020;font-weight:bold">this</span>.button2.Visible = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8</span><span><span style="color:#007020;font-weight:bold">this</span>.button3.Visible = <span style="color:#007020;font-weight:bold">true</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9</span><span>}
+</span></span></code></pre></div><p>With this done, we can finally change the frequency limitations:
+<img src="/blogimages/tyt/frequencies.png" alt="TYT Frequencies Unlocked"></p>
+<h1 id="putting-it-all-together">Putting It All Together</h1>
+<p>To unlock the frequencies, factory tools, and test mode of your TYT TH-UV88:</p>
+<ul>
+<li>Find the install location for the software (by default this is <code>C:/UV88 V1.00</code>)</li>
+<li>In the subdirectory <code>Uv88_SoftWare_Eng</code> open the included <code>setting.ini</code> file</li>
+<li>Change the value of <code>OwnUsed</code> to <code>ARRVIN</code> and save it. You&rsquo;ll need to launch the software as an administrator from now on.</li>
+<li>Run TH-UV88.exe, you will get a popup asking for a reg code. Put in <code>13636922224</code>.</li>
+</ul>
+<p>You now have access to the factory tuning tools and test mode. To unlock transmission frequencies:</p>
+<ul>
+<li>Open the frequency range menu from the left-hand side of the app</li>
+<li>Press <code>p</code> to reveal another code box</li>
+<li>Enter the code <code>13636922224</code> again</li>
+<li>Change the frequency values as needed and confirm</li>
+<li>Write changes to your radio</li>
+</ul>
+<h1 id="whats-next">What&rsquo;s Next?</h1>
+<p>I haven&rsquo;t played much with the factory tooling that&rsquo;s unlocked. Some of it looks like it has a high potential for breaking things, and what I was really after
+(locking the front panel of the radio) doesn&rsquo;t appear to be in there. But, some options for those of you who are more adventurous than me:
+<img src="/blogimages/tyt/basisadj.png" alt="TYT Basis Adjustment"></p>
+<p>I&rsquo;m also still searching for a way to lock the handset out of VFO mode and allow only selecting from the loaded channels. This is required under section 3.2 of RSS-119 for Land Mobile
+use in Canada:</p>
+<blockquote>
+<p>Transmitters With External Frequency Selection Controls</p>
+<p>In order to prevent radio interference caused by end-user transmissions on unauthorized frequencies, transmitters with external frequency selection controls and/or frequency programming capability shall conform to the following:</p>
+<ul>
+<li>Transmitters with external frequency selection controls shall operate only on authorized channels which have been preset by the manufacturer, equipment supplier, service technician or maintenance personnel.</li>
+<li>Transmitters with frequency programming capability must have at least one of the following design characteristics, which prevent the user from altering the preset frequencies:</li>
+<li>Transmitters with external controls available to the user can only be internally modified to place the equipment in the programmable mode. Furthermore, while in the programmable mode, the equipment is not capable of transmitting. The procedure for making the modification and altering the frequency program is not available to the user of the equipment.</li>
+<li>Transmitters are programmed for frequencies through controls that are inaccessible to the user.</li>
+<li>Transmitters are programmed for frequencies through the use of external devices or specifically programmed modules that are available only to the service technician or maintenance personnel.</li>
+<li>Transmitters are programmed through cloning (i.e., copying a program directly from another transmitter) using devices and procedures that are available only to the service technician or maintenance personnel.</li>
+</ul>
+</blockquote>
+<p>It&rsquo;s possible to do this, and the same model purchased in the U.S. has the panel locked out of the box. I have yet to find the relevant config in the software and it may be a true
+factory-only option. At your own risk, you may be able to just leave the radio in channelled mode and hope that anyone checking doesn&rsquo;t know how to toggle back to VFO mode
+which is done by pressing the <code>#</code> key.</p>
+
+</content>
+
+
+
+<p>
+  
+  <a href="https://jcrumb.github.io/tags/radio/">#Radio</a>
+  
+  <a href="https://jcrumb.github.io/tags/tech/">#Tech</a>
+  
+</p>
+
+  </main>
+  <footer>Made with <a href="https://github.com/janraasch/hugo-bearblog/">Hugo ʕ•ᴥ•ʔ Bear</a>
+<br><small>Views expressed are my own and do not represent those of my employer.</small>
+</footer>
+
+  
+</body>
+
+</html>

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Home on Crumbliacci&#39;s Blog</title>
-    <link>https://jcrumb.github.io/</link>
-    <description>Recent content in Home on Crumbliacci&#39;s Blog</description>
+    <title>Blog on Crumbliacci&#39;s Blog</title>
+    <link>https://jcrumb.github.io/blog/</link>
+    <description>Recent content in Blog on Crumbliacci&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en-US</language>
     <copyright>Copyright © Jay Crumb</copyright>
     <lastBuildDate>Tue, 10 Mar 2026 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://jcrumb.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://jcrumb.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Breakdown of an Ongoing macOS Infostealer Campaign</title>
       <link>https://jcrumb.github.io/breakdown-of-an-ongoing-macos-infostealer-campaign/</link>

@@ -1,4 +1,2 @@
-User-agent: *
-# robotstxt.org - if ENV production variable is false robots will be disallowed.
-
-  Disallow:
+User-Agent: *
+Sitemap: https://jcrumb.github.io/sitemap.xml
