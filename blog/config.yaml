@@ -1,34 +1,31 @@
-languageCode: "en-us"
-baseUrl: "https://jcrumb.github.io"
+languageCode: "en-US"
+baseURL: "https://jcrumb.github.io"
 title: "Crumbliacci's Blog"
-theme: "anubis"
-paginate: 10
+author: "Jay Crumb"
+copyright: "Copyright © Jay Crumb"
+theme: "hugo-bearblog"
 enableRobotsTXT: true
-googleAnalytics: "G-PMSMF8C2BN"
 
-menu:
-  main:
-  - identifier: archive
-    name: Archive
-    title: Archive
-    url: /posts/
-    weight: 0
-  - identifier: categories
-    name: Categories
-    title: Categories
-    url: /categories/
-    weight: 0
+services:
+  googleAnalytics:
+    id: "G-PMSMF8C2BN"
+
+disableKinds:
+  - taxonomy
+ignoreErrors:
+  - error-disable-taxonomy
+
+permalinks:
+  blog: "/:slug/"
 
 params:
-  author: "Jay Crumb"
-  email: jay@aardonyx.ca
-  avatar: "/images/me.jpg" # used for microformats
   description: ""
+  favicon: "images/favicon.png"
   dateFormat: "2006-01-02"
-  paginationSinglePost: true
-  style: light-without-switcher
-  readMore: true
-  disableSummary: false
-  social:
-    - id: github
-      name: jcrumb
+
+markup:
+  highlight:
+    style: friendly
+    lineNos: true
+    lineNumbersInTable: false
+    codeFences: true
