@@ -3,25 +3,20 @@ baseURL: "https://jcrumb.github.io"
 title: "Crumbliacci's Blog"
 author: "Jay Crumb"
 copyright: "Copyright © Jay Crumb"
-theme: "hugo-bearblog"
+theme: "anubis"
 enableRobotsTXT: true
 
 services:
   googleAnalytics:
     id: "G-PMSMF8C2BN"
 
-disableKinds:
-  - taxonomy
-ignoreErrors:
-  - error-disable-taxonomy
-
-permalinks:
-  blog: "/:slug/"
-
 params:
   description: ""
   favicon: "images/favicon.png"
   dateFormat: "2006-01-02"
+  style: "light-without-switcher"
+  mainSections:
+    - blog
 
 markup:
   highlight:

