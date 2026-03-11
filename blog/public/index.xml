@@ -40,8 +40,9 @@ but only &lt;em&gt;after&lt;/em&gt; allowing the execution to proceed.&lt;/p&gt;
 &lt;/h1&gt;&lt;p&gt;Much has already been written about similar ongoing campaigns, but the high level way they work is this:&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;The threat actor compromises one or several Google Ads accounts (the exact mechanism will vary).&lt;/li&gt;
-&lt;li&gt;They also compromise insecure personal websites, domains, or register throwaway subdomains on free hosting sites.&lt;/li&gt;
-&lt;li&gt;Armed with these two tools, they clone documentation sites for tools such as Claude Code and place ads on Google
+&lt;li&gt;They also compromise insecure domains, or register throwaway subdomains on free hosting sites. Anecdotally, a lot of the
+sites used appear to be individuals&amp;rsquo; personal blogs/websites.&lt;/li&gt;
+&lt;li&gt;Next, they clone documentation sites for tools such as Claude Code and place ads on Google
 to get their faked sites to the top of search results.&lt;/li&gt;
 &lt;li&gt;The fake sites have install instructions that give you malware to run.&lt;/li&gt;
 &lt;li&gt;You, the user, helpfully run the malware for the attacker.&lt;/li&gt;
